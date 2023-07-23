@@ -9,5 +9,7 @@ public enum ModLoaders
     Rift,
     LiteLoader,
     ModLoaderMP,
-    MCP
+    MCP,
+    Datapack,
+    Quilt,
 }
