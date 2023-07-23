@@ -7,10 +7,13 @@ public class FacetBuilder
 {
     private readonly StringBuilder builder;
 
+    internal bool IsEmpty { get; private set; }
+
     public FacetBuilder()
     {
         builder = new();
         builder.Append("facets=[");
+        IsEmpty = true;
     }
 
     /// <summary>
@@ -20,13 +23,18 @@ public class FacetBuilder
     /// </summary>
     /// <param name="loaders">A list of minecraft mod loaders</param>
     /// <returns></returns>
-    public FacetBuilder AddModloaders(params ModLoaders[] loaders)
-    {
-        return AddCategories(Array.ConvertAll(loaders, i => i.ToString().ToLower()));
-    }
+    public FacetBuilder AddModloaders(params ModLoaders[] loaders) => AddCategories(Array.ConvertAll(loaders, i => i.ToString().ToLower()));
 
+    /// <summary>
+    /// Adds a facet for categories. If you add them all in one it will be considered an 'OR', or
+    /// you can add them with individual function calls for an 'AND' request <br/><a
+    /// href="https://docs.modrinth.com/docs/tutorials/api_search/#or">Modrinths Search API Documentation</a>
+    /// </summary>
+    /// <param name="categories">A list of modrinth categories</param>
+    /// <returns></returns>
     public FacetBuilder AddCategories(params string[] categories)
     {
+        IsEmpty = false;
         StringBuilder categoryBuilder = new();
         builder.Append('[');
         foreach (string category in categories)
@@ -36,7 +44,7 @@ public class FacetBuilder
             categoryBuilder.Append("\",");
         }
         builder.Append(categoryBuilder.ToString().Trim(','));
-        builder.Append("\"],");
+        builder.Append("],");
 
         return this;
     }
@@ -50,6 +58,7 @@ public class FacetBuilder
     /// <returns></returns>
     public FacetBuilder AddVersions(params string[] versions)
     {
+        IsEmpty = false;
         StringBuilder verstionBuilder = new();
         builder.Append('[');
         foreach (string version in versions)
@@ -59,7 +68,7 @@ public class FacetBuilder
             verstionBuilder.Append("\",");
         }
         builder.Append(verstionBuilder.ToString().Trim(','));
-        builder.Append("\"],");
+        builder.Append("],");
 
         return this;
     }
@@ -73,6 +82,7 @@ public class FacetBuilder
     /// <returns></returns>
     public FacetBuilder AddLicenses(params string[] licenses)
     {
+        IsEmpty = false;
         StringBuilder licenceBuilder = new();
         builder.Append('[');
         foreach (string license in licenses)
@@ -82,7 +92,7 @@ public class FacetBuilder
             licenceBuilder.Append("\",");
         }
         builder.Append(licenceBuilder.ToString().Trim(','));
-        builder.Append("\"],");
+        builder.Append("],");
 
         return this;
     }
@@ -94,8 +104,18 @@ public class FacetBuilder
     /// </summary>
     /// <param name="types">A list of project types. Ex: mod, modpack, resourcepack, etc</param>
     /// <returns></returns>
+    public FacetBuilder AddProjectTypes(params ModrinthProjectTypes[] types) => AddProjectTypes(Array.ConvertAll(types, i => i.ToString().ToLower()));
+
+    /// <summary>
+    /// Adds a facet for project types. If you add them all in one it will be considered an 'OR', or
+    /// you can add them with individual function calls for an 'AND' request <br/><a
+    /// href="https://docs.modrinth.com/docs/tutorials/api_search/#or">Modrinths Search API Documentation</a>
+    /// </summary>
+    /// <param name="types">A list of project types. Ex: mod, modpack, resourcepack, etc</param>
+    /// <returns></returns>
     public FacetBuilder AddProjectTypes(params string[] types)
     {
+        IsEmpty = false;
         StringBuilder typeBuilder = new();
         builder.Append('[');
         foreach (string type in types)
@@ -105,7 +125,7 @@ public class FacetBuilder
             typeBuilder.Append("\",");
         }
         builder.Append(typeBuilder.ToString().Trim(','));
-        builder.Append("\"],");
+        builder.Append("],");
 
         return this;
     }
@@ -117,5 +137,14 @@ public class FacetBuilder
     public string Build()
     {
         return builder.ToString().Trim(',') + "]";
+    }
+
+    /// <summary>
+    /// Returns the finalized string output. <br/> See: <seealso cref="Build">Build()</seealso>
+    /// </summary>
+    /// <returns></returns>
+    public override string ToString()
+    {
+        return Build();
     }
 }
