@@ -145,4 +145,16 @@ public sealed class ModrinthClient : NetworkClient
     /// </returns>
 
     public ModrinthUser? GetUser(string id) => GetUserAsync(id).Result;
+
+    public async Task<ModrinthVersionFile[]?> GetProjectVersionsAsync(string id)
+    {
+        HttpResponseMessage response = await GetAsync($"{BaseURL}project/{id}/version");
+        if (response.IsSuccessStatusCode)
+        {
+            return JArray.Parse(await response.Content.ReadAsStringAsync()).ToObject<ModrinthVersionFile[]>();
+        }
+        return null;
+    }
+
+    public ModrinthVersionFile[]? GetProjectVersions(string id) => GetProjectVersionsAsync(id).Result;
 }

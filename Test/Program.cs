@@ -12,6 +12,7 @@ internal class Program
         await GetModrinthProject();
         await GetModrinthProjectDependencies();
         await GetModrinthUser();
+        await GetProjectVersions();
         Console.Write("Press any key to continue...");
         Console.ReadKey();
     }
@@ -66,5 +67,15 @@ internal class Program
         Console.Write($"[{(user == null ? "FAIL" : "SUCCESS")}]");
         Console.ResetColor();
         Console.WriteLine($" Get Modrinth User!");
+    }
+
+    private static async Task GetProjectVersions()
+    {
+        using ModrinthClient client = new();
+        var versions = await client.GetProjectVersionsAsync("ewLFY6nv");
+        Console.ForegroundColor = versions == null ? ConsoleColor.Red : ConsoleColor.Green;
+        Console.Write($"[{(versions == null ? "FAIL" : "SUCCESS")}]");
+        Console.ResetColor();
+        Console.WriteLine($" Get Project Versions!");
     }
 }
