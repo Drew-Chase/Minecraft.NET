@@ -1,6 +1,7 @@
 ﻿// LFInteractive LLC. 2021-2024﻿
 using Chase.Minecraft.Modrinth.Model;
 using Chase.Networking;
+using Chase.Networking.Event;
 using Newtonsoft.Json.Linq;
 
 namespace Chase.Minecraft.Modrinth;
@@ -114,7 +115,6 @@ public sealed class ModrinthClient : NetworkClient
     /// The project dependencies as a ModrinthProjectDependencies object, or null if the retrieval
     /// was not successful.
     /// </returns>
-
     public ModrinthProjectDependencies? GetProjectDependencies(string id) => GetProjectDependenciesAsync(id).Result;
 
     /// <summary>
@@ -125,7 +125,6 @@ public sealed class ModrinthClient : NetworkClient
     /// A task representing the asynchronous operation. The result is the user information as a
     /// ModrinthUser object, or null if the retrieval was not successful.
     /// </returns>
-
     public async Task<ModrinthUser?> GetUserAsync(string id)
     {
         HttpResponseMessage response = await GetAsync($"{BaseURL}user/{id}");
@@ -143,9 +142,15 @@ public sealed class ModrinthClient : NetworkClient
     /// <returns>
     /// The user information as a ModrinthUser object, or null if the retrieval was not successful.
     /// </returns>
-
     public ModrinthUser? GetUser(string id) => GetUserAsync(id).Result;
 
+    /// <summary>
+    /// Gets the versions of a Modrinth project based on the provided project ID.
+    /// </summary>
+    /// <param name="id">The ID of the project for which to retrieve the versions.</param>
+    /// <returns>
+    /// A <see cref="Task"/> representing the asynchronous operation with the project versions.
+    /// </returns>
     public async Task<ModrinthVersionFile[]?> GetProjectVersionsAsync(string id)
     {
         HttpResponseMessage response = await GetAsync($"{BaseURL}project/{id}/version");
@@ -156,5 +161,24 @@ public sealed class ModrinthClient : NetworkClient
         return null;
     }
 
+    /// <summary>
+    /// Gets the versions of a Modrinth project based on the provided project ID.
+    /// </summary>
+    /// <param name="id">The ID of the project for which to retrieve the versions.</param>
+    /// <returns>The project versions, or null if the operation fails.</returns>
     public ModrinthVersionFile[]? GetProjectVersions(string id) => GetProjectVersionsAsync(id).Result;
+
+    /// <summary>
+    /// Downloads a specific version file from Modrinth and saves it to the specified output directory.
+    /// </summary>
+    /// <param name="versionFile">The version file details.</param>
+    /// <param name="outputDirectory">The directory where the file will be saved.</param>
+    /// <param name="downloadProgress">The event to track the download progress.</param>
+    /// <returns>A Task containing the path to the downloaded file.</returns>
+    public async Task<string> DownloadVersionFile(VersionFileDetails versionFile, string outputDirectory, DownloadProgressEvent downloadProgress)
+    {
+        string path = Path.Combine(outputDirectory, versionFile.Filename);
+        await DownloadFileAsync(new(versionFile.Url), path, downloadProgress);
+        return path;
+    }
 }
