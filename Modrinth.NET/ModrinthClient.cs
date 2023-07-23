@@ -10,13 +10,13 @@ public sealed class ModrinthClient : NetworkClient
     private readonly string API_KEY = "";
     private readonly string BaseURL = "https://api.modrinth.com/v2/";
 
-    public ModrinthClient(string api_key) : this()
-    {
-        API_KEY = api_key;
-    }
-
     public ModrinthClient()
     {
+    }
+
+    private ModrinthClient(string api_key) : this()
+    {
+        API_KEY = api_key;
     }
 
     public async Task<ModrinthSearchResult?> SearchAsync(ModrinthSearchQuery query)
@@ -45,4 +45,28 @@ public sealed class ModrinthClient : NetworkClient
     }
 
     public ModrinthSearchResult? Search(ModrinthSearchQuery query) => SearchAsync(query).Result;
+
+    public async Task<ModrinthProject?> GetProjectAsync(string id)
+    {
+        HttpResponseMessage response = await GetAsync($"{BaseURL}project/{id}");
+        if (response.IsSuccessStatusCode)
+        {
+            return JObject.Parse(await response.Content.ReadAsStringAsync()).ToObject<ModrinthProject>();
+        }
+        return null;
+    }
+
+    public ModrinthProject? GetProject(string id) => GetProjectAsync(id).Result;
+
+    public async Task<ModrinthProjectDependencies?> GetProjectDependenciesAsync(string id)
+    {
+        HttpResponseMessage response = await GetAsync($"{BaseURL}project/{id}/dependencies");
+        if (response.IsSuccessStatusCode)
+        {
+            return JObject.Parse(await response.Content.ReadAsStringAsync()).ToObject<ModrinthProjectDependencies>();
+        }
+        return null;
+    }
+
+    public ModrinthProjectDependencies? GetProjectDependencies(string id) => GetProjectDependenciesAsync(id).Result;
 }
