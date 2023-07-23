@@ -6,18 +6,20 @@ using Newtonsoft.Json.Linq;
 
 namespace Chase.Minecraft.Modrinth;
 
-public sealed class ModrinthClient : NetworkClient
+public sealed class ModrinthClient : IDisposable
 {
-    private readonly string API_KEY = "";
-    private readonly string BaseURL = "https://api.modrinth.com/v2/";
+    private readonly string _api = "";
+    private readonly string BASE_URL = "https://api.modrinth.com/v2/";
+    private readonly NetworkClient _client;
 
     public ModrinthClient()
     {
+        _client = new NetworkClient();
     }
 
     private ModrinthClient(string api_key) : this()
     {
-        API_KEY = api_key;
+        _api = api_key;
     }
 
     /// <summary>
@@ -35,8 +37,8 @@ public sealed class ModrinthClient : NetworkClient
         {
             facets = $"&{query.Facets.Build()}";
         }
-        Uri uri = new($"{BaseURL}search?query={query.Query}&limit={query.Limit}&index={query.Ordering.ToString().ToLower()}&offset={query.Offset}{facets}");
-        HttpResponseMessage response = await GetAsync(uri);
+        Uri uri = new($"{BASE_URL}search?query={query.Query}&limit={query.Limit}&index={query.Ordering.ToString().ToLower()}&offset={query.Offset}{facets}");
+        HttpResponseMessage response = await _client.GetAsync(uri);
 
         if (response.IsSuccessStatusCode)
         {
@@ -72,7 +74,7 @@ public sealed class ModrinthClient : NetworkClient
     /// </returns>
     public async Task<ModrinthProject?> GetProjectAsync(string id)
     {
-        HttpResponseMessage response = await GetAsync($"{BaseURL}project/{id}");
+        HttpResponseMessage response = await _client.GetAsync($"{BASE_URL}project/{id}");
         if (response.IsSuccessStatusCode)
         {
             return JObject.Parse(await response.Content.ReadAsStringAsync()).ToObject<ModrinthProject>();
@@ -99,7 +101,7 @@ public sealed class ModrinthClient : NetworkClient
     /// </returns>
     public async Task<ModrinthProjectDependencies?> GetProjectDependenciesAsync(string id)
     {
-        HttpResponseMessage response = await GetAsync($"{BaseURL}project/{id}/dependencies");
+        HttpResponseMessage response = await _client.GetAsync($"{BASE_URL}project/{id}/dependencies");
         if (response.IsSuccessStatusCode)
         {
             return JObject.Parse(await response.Content.ReadAsStringAsync()).ToObject<ModrinthProjectDependencies>();
@@ -127,7 +129,7 @@ public sealed class ModrinthClient : NetworkClient
     /// </returns>
     public async Task<ModrinthUser?> GetUserAsync(string id)
     {
-        HttpResponseMessage response = await GetAsync($"{BaseURL}user/{id}");
+        HttpResponseMessage response = await _client.GetAsync($"{BASE_URL}user/{id}");
         if (response.IsSuccessStatusCode)
         {
             return JObject.Parse(await response.Content.ReadAsStringAsync()).ToObject<ModrinthUser>();
@@ -153,7 +155,7 @@ public sealed class ModrinthClient : NetworkClient
     /// </returns>
     public async Task<ModrinthVersionFile[]?> GetProjectVersionsAsync(string id)
     {
-        HttpResponseMessage response = await GetAsync($"{BaseURL}project/{id}/version");
+        HttpResponseMessage response = await _client.GetAsync($"{BASE_URL}project/{id}/version");
         if (response.IsSuccessStatusCode)
         {
             return JArray.Parse(await response.Content.ReadAsStringAsync()).ToObject<ModrinthVersionFile[]>();
@@ -175,10 +177,43 @@ public sealed class ModrinthClient : NetworkClient
     /// <param name="outputDirectory">The directory where the file will be saved.</param>
     /// <param name="downloadProgress">The event to track the download progress.</param>
     /// <returns>A Task containing the path to the downloaded file.</returns>
-    public async Task<string> DownloadVersionFile(VersionFileDetails versionFile, string outputDirectory, DownloadProgressEvent downloadProgress)
+    public async Task<string> DownloadVersionFile(VersionFileDetails versionFile, string outputDirectory, DownloadProgressEvent? downloadProgress = null)
     {
+        downloadProgress ??= (s, e) => { };
         string path = Path.Combine(outputDirectory, versionFile.Filename);
-        await DownloadFileAsync(new(versionFile.Url), path, downloadProgress);
+        await _client.DownloadFileAsync(new(versionFile.Url), path, downloadProgress);
         return path;
+    }
+
+    /// <summary>
+    /// Asynchronously gets the categories available in Modrinth.
+    /// </summary>
+    /// <returns>
+    /// A task representing the asynchronous operation. The result is an array of <see
+    /// cref="CategoryTag"/> representing the categories available in Modrinth, or null if the
+    /// retrieval was not successful.
+    /// </returns>
+    public async Task<CategoryTag[]?> GetCategoriesAsync()
+    {
+        HttpResponseMessage response = await _client.GetAsync($"{BASE_URL}tag/category");
+        if (response.IsSuccessStatusCode)
+        {
+            return JArray.Parse(await response.Content.ReadAsStringAsync()).ToObject<CategoryTag[]>();
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Gets the categories available in Modrinth.
+    /// </summary>
+    /// <returns>
+    /// An array of <see cref="CategoryTag"/> representing the categories available in Modrinth, or
+    /// null if the retrieval was not successful.
+    /// </returns>
+    public CategoryTag[]? GetCategories() => GetCategoriesAsync().Result;
+
+    public void Dispose()
+    {
+        _client.Dispose();
     }
 }
