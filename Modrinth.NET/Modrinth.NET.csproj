@@ -11,4 +11,8 @@
     <PackageReference Include="Chase.Networking" Version="0.0.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Minecraft.NET\Minecraft.NET.csproj" />
+  </ItemGroup>
+
 </Project>
