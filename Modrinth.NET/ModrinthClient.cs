@@ -19,6 +19,14 @@ public sealed class ModrinthClient : NetworkClient
         API_KEY = api_key;
     }
 
+    /// <summary>
+    /// Searches for mods or projects in Modrinth based on the provided search query.
+    /// </summary>
+    /// <param name="query">The search query containing search parameters.</param>
+    /// <returns>
+    /// A task representing the asynchronous search operation. The result is the search result as a
+    /// ModrinthSearchResult object, or null if the search was not successful.
+    /// </returns>
     public async Task<ModrinthSearchResult?> SearchAsync(ModrinthSearchQuery query)
     {
         string facets = "";
@@ -44,8 +52,23 @@ public sealed class ModrinthClient : NetworkClient
         return null;
     }
 
+    /// <summary>
+    /// Synchronously searches for mods or projects in Modrinth based on the provided search query.
+    /// </summary>
+    /// <param name="query">The search query containing search parameters.</param>
+    /// <returns>
+    /// The search result as a ModrinthSearchResult object, or null if the search was not successful.
+    /// </returns>
     public ModrinthSearchResult? Search(ModrinthSearchQuery query) => SearchAsync(query).Result;
 
+    /// <summary>
+    /// Retrieves information about a specific project from Modrinth.
+    /// </summary>
+    /// <param name="id">The ID of the project to retrieve.</param>
+    /// <returns>
+    /// A task representing the asynchronous operation. The result is the project information as a
+    /// ModrinthProject object, or null if the retrieval was not successful.
+    /// </returns>
     public async Task<ModrinthProject?> GetProjectAsync(string id)
     {
         HttpResponseMessage response = await GetAsync($"{BaseURL}project/{id}");
@@ -56,8 +79,23 @@ public sealed class ModrinthClient : NetworkClient
         return null;
     }
 
+    /// <summary>
+    /// Synchronously retrieves information about a specific project from Modrinth.
+    /// </summary>
+    /// <param name="id">The ID of the project to retrieve.</param>
+    /// <returns>
+    /// The project information as a ModrinthProject object, or null if the retrieval was not successful.
+    /// </returns>
     public ModrinthProject? GetProject(string id) => GetProjectAsync(id).Result;
 
+    /// <summary>
+    /// Retrieves dependencies of a specific project from Modrinth.
+    /// </summary>
+    /// <param name="id">The ID of the project for which to retrieve dependencies.</param>
+    /// <returns>
+    /// A task representing the asynchronous operation. The result is the project dependencies as a
+    /// ModrinthProjectDependencies object, or null if the retrieval was not successful.
+    /// </returns>
     public async Task<ModrinthProjectDependencies?> GetProjectDependenciesAsync(string id)
     {
         HttpResponseMessage response = await GetAsync($"{BaseURL}project/{id}/dependencies");
@@ -68,7 +106,25 @@ public sealed class ModrinthClient : NetworkClient
         return null;
     }
 
+    /// <summary>
+    /// Synchronously retrieves dependencies of a specific project from Modrinth.
+    /// </summary>
+    /// <param name="id">The ID of the project for which to retrieve dependencies.</param>
+    /// <returns>
+    /// The project dependencies as a ModrinthProjectDependencies object, or null if the retrieval
+    /// was not successful.
+    /// </returns>
+
     public ModrinthProjectDependencies? GetProjectDependencies(string id) => GetProjectDependenciesAsync(id).Result;
+
+    /// <summary>
+    /// Retrieves information about a specific user from Modrinth.
+    /// </summary>
+    /// <param name="id">The ID of the user to retrieve.</param>
+    /// <returns>
+    /// A task representing the asynchronous operation. The result is the user information as a
+    /// ModrinthUser object, or null if the retrieval was not successful.
+    /// </returns>
 
     public async Task<ModrinthUser?> GetUserAsync(string id)
     {
@@ -79,6 +135,14 @@ public sealed class ModrinthClient : NetworkClient
         }
         return null;
     }
+
+    /// <summary>
+    /// Synchronously retrieves information about a specific user from Modrinth.
+    /// </summary>
+    /// <param name="id">The ID of the user to retrieve.</param>
+    /// <returns>
+    /// The user information as a ModrinthUser object, or null if the retrieval was not successful.
+    /// </returns>
 
     public ModrinthUser? GetUser(string id) => GetUserAsync(id).Result;
 }
