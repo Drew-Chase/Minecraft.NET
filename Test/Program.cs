@@ -11,6 +11,7 @@ internal class Program
         await SearchModrinth();
         await GetModrinthProject();
         await GetModrinthProjectDependencies();
+        await GetModrinthUser();
         Console.Write("Press any key to continue...");
         Console.ReadKey();
     }
@@ -55,5 +56,15 @@ internal class Program
         Console.Write($"[{(dependencies == null ? "FAIL" : "SUCCESS")}]");
         Console.ResetColor();
         Console.WriteLine($" Get Modrinth Project Dependencies!");
+    }
+
+    private static async Task GetModrinthUser()
+    {
+        using ModrinthClient client = new();
+        ModrinthUser? user = await client.GetUserAsync("dcmanproductions");
+        Console.ForegroundColor = user == null ? ConsoleColor.Red : ConsoleColor.Green;
+        Console.Write($"[{(user == null ? "FAIL" : "SUCCESS")}]");
+        Console.ResetColor();
+        Console.WriteLine($" Get Modrinth User!");
     }
 }

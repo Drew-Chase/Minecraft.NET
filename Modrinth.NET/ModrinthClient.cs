@@ -69,4 +69,16 @@ public sealed class ModrinthClient : NetworkClient
     }
 
     public ModrinthProjectDependencies? GetProjectDependencies(string id) => GetProjectDependenciesAsync(id).Result;
+
+    public async Task<ModrinthUser?> GetUserAsync(string id)
+    {
+        HttpResponseMessage response = await GetAsync($"{BaseURL}user/{id}");
+        if (response.IsSuccessStatusCode)
+        {
+            return JObject.Parse(await response.Content.ReadAsStringAsync()).ToObject<ModrinthUser>();
+        }
+        return null;
+    }
+
+    public ModrinthUser? GetUser(string id) => GetUserAsync(id).Result;
 }
