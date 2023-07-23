@@ -1,13 +1,21 @@
 ﻿// LFInteractive LLC. 2021-2024﻿
 using Chase.Minecraft.Modrinth;
 using Chase.Minecraft.Modrinth.Model;
-using Newtonsoft.Json;
 
 namespace Test;
 
 internal class Program
 {
-    private static void Main(string[] args)
+    private static async Task Main(string[] args)
+    {
+        await SearchModrinth();
+        await GetModrinthProject();
+        await GetModrinthProjectDependencies();
+        Console.Write("Press any key to continue...");
+        Console.ReadKey();
+    }
+
+    private static async Task SearchModrinth()
     {
         using ModrinthClient client = new();
         FacetBuilder builder = new FacetBuilder()
@@ -22,9 +30,30 @@ internal class Program
             Ordering = SearchOrdering.Relevance,
         };
 
-        ModrinthSearchResult? results = client.Search(query);
-        Console.WriteLine(JsonConvert.SerializeObject(results, Formatting.Indented));
-        Console.Write("Press any key to continue...");
-        Console.ReadKey();
+        ModrinthSearchResult? results = await client.SearchAsync(query);
+        Console.ForegroundColor = results == null ? ConsoleColor.Red : ConsoleColor.Green;
+        Console.Write($"[{(results == null ? "FAIL" : "SUCCESS")}]");
+        Console.ResetColor();
+        Console.WriteLine($" Modrinth Search!");
+    }
+
+    private static async Task GetModrinthProject()
+    {
+        using ModrinthClient client = new();
+        ModrinthProject? project = await client.GetProjectAsync("ewLFY6nv");
+        Console.ForegroundColor = project == null ? ConsoleColor.Red : ConsoleColor.Green;
+        Console.Write($"[{(project == null ? "FAIL" : "SUCCESS")}]");
+        Console.ResetColor();
+        Console.WriteLine($" Get Modrinth Project!");
+    }
+
+    private static async Task GetModrinthProjectDependencies()
+    {
+        using ModrinthClient client = new();
+        ModrinthProjectDependencies? dependencies = await client.GetProjectDependenciesAsync("ewLFY6nv");
+        Console.ForegroundColor = dependencies == null ? ConsoleColor.Red : ConsoleColor.Green;
+        Console.Write($"[{(dependencies == null ? "FAIL" : "SUCCESS")}]");
+        Console.ResetColor();
+        Console.WriteLine($" Get Modrinth Project Dependencies!");
     }
 }
