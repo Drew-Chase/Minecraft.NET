@@ -13,6 +13,13 @@ public class FacetBuilder
         builder.Append("facets=[");
     }
 
+    /// <summary>
+    /// Adds a facet for modloaders. If you add them all in one it will be considered an 'OR', or
+    /// you can add them with individual function calls for an 'AND' request <br/><a
+    /// href="https://docs.modrinth.com/docs/tutorials/api_search/#or">Modrinths Search API Documentation</a>
+    /// </summary>
+    /// <param name="loaders">A list of minecraft mod loaders</param>
+    /// <returns></returns>
     public FacetBuilder AddModloaders(params ModLoaders[] loaders)
     {
         return AddCategories(Array.ConvertAll(loaders, i => i.ToString().ToLower()));
@@ -34,6 +41,13 @@ public class FacetBuilder
         return this;
     }
 
+    /// <summary>
+    /// Adds a facet for versions. If you add them all in one it will be considered an 'OR', or you
+    /// can add them with individual function calls for an 'AND' request <br/><a
+    /// href="https://docs.modrinth.com/docs/tutorials/api_search/#or">Modrinths Search API Documentation</a>
+    /// </summary>
+    /// <param name="versions">A list of minecraft versions</param>
+    /// <returns></returns>
     public FacetBuilder AddVersions(params string[] versions)
     {
         StringBuilder verstionBuilder = new();
@@ -50,6 +64,13 @@ public class FacetBuilder
         return this;
     }
 
+    /// <summary>
+    /// Adds a facet for licenses. If you add them all in one it will be considered an 'OR', or you
+    /// can add them with individual function calls for an 'AND' request <br/><a
+    /// href="https://docs.modrinth.com/docs/tutorials/api_search/#or">Modrinths Search API Documentation</a>
+    /// </summary>
+    /// <param name="licenses">A list of license types</param>
+    /// <returns></returns>
     public FacetBuilder AddLicenses(params string[] licenses)
     {
         StringBuilder licenceBuilder = new();
@@ -66,6 +87,13 @@ public class FacetBuilder
         return this;
     }
 
+    /// <summary>
+    /// Adds a facet for project types. If you add them all in one it will be considered an 'OR', or
+    /// you can add them with individual function calls for an 'AND' request <br/><a
+    /// href="https://docs.modrinth.com/docs/tutorials/api_search/#or">Modrinths Search API Documentation</a>
+    /// </summary>
+    /// <param name="types">A list of project types. Ex: mod, modpack, resourcepack, etc</param>
+    /// <returns></returns>
     public FacetBuilder AddProjectTypes(params string[] types)
     {
         StringBuilder typeBuilder = new();
@@ -82,6 +110,10 @@ public class FacetBuilder
         return this;
     }
 
+    /// <summary>
+    /// Returns the finalized string output.
+    /// </summary>
+    /// <returns></returns>
     public string Build()
     {
         return builder.ToString().Trim(',') + "]";
