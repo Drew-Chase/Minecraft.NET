@@ -10,7 +10,7 @@ internal static class MinecraftTest
     public static async Task Start()
     {
         var watch = Stopwatch.StartNew();
-        ClientStartInfo info = new() { OfflineUsername = "dev", Directory = Directory.GetParent(Process.GetCurrentProcess().MainModule?.FileName ?? "")?.FullName ?? Environment.CurrentDirectory, JavaExecutable = Path.Combine(JavaController.GetLocalJVMInstallations()[0], "java.exe") };
+        ClientStartInfo info = new() { Username = "dev", Directory = Directory.GetParent(Process.GetCurrentProcess().MainModule?.FileName ?? "")?.FullName ?? Environment.CurrentDirectory, JavaExecutable = Path.Combine(JavaController.GetLocalJVMInstallations()[0], "java.exe") };
         //using MinecraftClient client = new(info);
         //MinecraftVersion? version = await client.GetLatestMinecraftVersionAsync();
         //if (version != null)
