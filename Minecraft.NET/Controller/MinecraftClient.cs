@@ -1,7 +1,7 @@
 ﻿// LFInteractive LLC. 2021-2024﻿
 using Chase.Minecraft.Model;
 using Chase.Networking;
-using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Chase.Minecraft.Controller;
 
@@ -19,38 +19,28 @@ public class MinecraftClient : IDisposable
     public async Task DownloadAllLibs()
     {
         string libBasePath = Path.Combine(_clientStartInfo.Directory, "libraries");
-        string url = "https://piston-meta.mojang.com/v1/packages/715ccf3330885e75b205124f09f8712542cbe7e0/1.20.1.json";
 
-        HttpResponseMessage response = await _client.GetAsync(url);
+        HttpResponseMessage response = await _client.GetAsync("https://piston-meta.mojang.com/v1/packages/715ccf3330885e75b205124f09f8712542cbe7e0/1.20.1.json");
 
         if (response.IsSuccessStatusCode)
         {
-            string json = await response.Content.ReadAsStringAsync();
-            dynamic data = JsonConvert.DeserializeObject(json);
-            foreach (var library in data.libraries)
+            DownloadArtifact[] artifacts = JObject.Parse(await response.Content.ReadAsStringAsync())["libraries"]?.ToObject<DownloadArtifact[]>() ?? Array.Empty<DownloadArtifact>();
+            foreach (DownloadArtifact artifact in artifacts)
             {
-                string libUrl = library.downloads.artifact.url;
-                string libPath = library.downloads.artifact.path;
-
-                Console.WriteLine("URL: " + libUrl);
-                Console.WriteLine("Path: " + libPath);
-
-
-                //await _client.DownloadFileAsync(new Uri(libUrl), Directory.CreateDirectory(Path.Combine(libBasePath, Path.GetDirectoryName(libPath))).FullName, (s, e)=>{ });
-
-                string directoryPath = Path.GetDirectoryName(libPath);
-                Directory.CreateDirectory(directoryPath);
-
-                await _client.DownloadFileAsync(new Uri(libUrl), libPath, (s, e) => { });
-
-                Console.WriteLine();
+                string absolutePath = Path.Combine(libBasePath, artifact.Downloads.Artifact.Path);
+                string filename = absolutePath.Split('/').Last();
+                await Console.Out.WriteLineAsync($"Downloading '{artifact.Downloads.Artifact.Path}'");
+                string directory = Directory.CreateDirectory(Directory.GetParent(absolutePath)?.FullName ?? "").FullName;
+                await _client.DownloadFileAsync(new Uri(artifact.Downloads.Artifact.Url), absolutePath, (s, e) =>
+                {
+                    Console.WriteLine(e.Percentage.ToString("P2"));
+                });
             }
         }
         else
         {
             Console.WriteLine("Request failed with status code: " + response.StatusCode);
         }
-
     }
 
     public void Dispose()
