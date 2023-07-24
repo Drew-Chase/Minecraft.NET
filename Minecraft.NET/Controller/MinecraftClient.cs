@@ -70,6 +70,26 @@ public class MinecraftClient : IDisposable
     }
 
     /// <summary>
+    /// Sets the clients id, name and version. This is used by minecraft for telemetry and
+    /// authentication. <br/> If you don't have a xbox client id you can get it from the <a
+    /// href="https://portal.azure.com/#view/Microsoft_AAD_IAM/ActiveDirectoryMenuBlade/~/RegisteredApps">Azure Portal</a>
+    /// </summary>
+    /// <param name="clientId">The xbox client id.</param>
+    /// <param name="clientName">The name of the client</param>
+    /// <param name="clientVersion">the clients version</param>
+    public void SetClientInfo(string clientId, string clientName, string clientVersion)
+    {
+        _clientInfo.ClientID = clientId;
+        _clientInfo.ClientName = clientName;
+        _clientInfo.ClientVersion = clientVersion;
+    }
+
+    public async Task AuthenticateUser()
+    {
+        await MicrosoftAuthenticationController.LogIn(_clientInfo.ClientID);
+    }
+
+    /// <summary>
     /// Sets the Minecraft version to be used for launching the client.
     /// </summary>
     /// <param name="version">The Minecraft version to set.</param>
@@ -184,9 +204,9 @@ public class MinecraftClient : IDisposable
 
         if (response.IsSuccessStatusCode)
         {
-            DownloadArtifact[] artifacts = JObject.Parse(await response.Content.ReadAsStringAsync())["libraries"]?.ToObject<DownloadArtifact[]>() ?? Array.Empty<DownloadArtifact>();
+            _clientInfo.LibraryFiles = JObject.Parse(await response.Content.ReadAsStringAsync())["libraries"]?.ToObject<DownloadArtifact[]>() ?? Array.Empty<DownloadArtifact>();
             List<Task> tasks = new();
-            foreach (DownloadArtifact artifact in artifacts)
+            foreach (DownloadArtifact artifact in _clientInfo.LibraryFiles)
             {
                 string absolutePath = Path.Combine(_clientInfo.Libraries, artifact.Downloads.Artifact.Path);
                 string filename = absolutePath.Split('/').Last();
@@ -245,14 +265,71 @@ public class MinecraftClient : IDisposable
     public bool LoadFromCache()
     {
         string cacheFile = Path.Combine(Directory.CreateDirectory(Path.Combine(_clientInfo.ClientStartInfo.Directory, "versions", _clientInfo.Version.ID)).FullName, "cache.json");
-        if (!File.Exists(cacheFile))
+        if (File.Exists(cacheFile))
         {
-            return false;
+            using (FileStream fs = new(cacheFile, FileMode.Open, FileAccess.Read, FileShare.Read))
+            {
+                using StreamReader reader = new(fs);
+                _clientInfo = JObject.Parse(reader.ReadToEnd()).ToObject<ClientInfo>() ?? _clientInfo;
+            }
+
+            if (_clientInfo != null)
+            {
+                if (Directory.Exists(_clientInfo.Assets))
+                {
+                    if (Directory.Exists(Path.Combine(_clientInfo.Assets, "objects")))
+                    {
+                        if (Directory.Exists(Path.Combine(_clientInfo.Assets, "indexes")))
+                        {
+                            if (File.Exists(Path.Combine(_clientInfo.Assets, "indexes", $"{_clientInfo.AssetIndex}.json")))
+                            {
+                                bool hasAllObjects = true;
+                                using (FileStream fs = new(Path.Combine(_clientInfo.Assets, "indexes", $"{_clientInfo.AssetIndex}.json"), FileMode.Open, FileAccess.Read, FileShare.Read))
+                                {
+                                    Dictionary<string, long> names = Directory.GetFiles(Path.Combine(_clientInfo.Assets, "objects"), "*", SearchOption.AllDirectories).ToDictionary(i => Path.GetFileName(i), i => new FileInfo(i).Length);
+                                    using StreamReader reader = new(fs);
+                                    JObject? json = JObject.Parse(reader.ReadToEnd())["objects"]?.ToObject<JObject>();
+                                    if (json != null)
+                                    {
+                                        foreach (KeyValuePair<string, JToken?> obj in json)
+                                        {
+                                            string? hash = obj.Value?["hash"]?.ToObject<string>();
+                                            long? size = obj.Value?["size"]?.ToObject<long>();
+                                            if (hash != null && size != null)
+                                            {
+                                                if (!names.ContainsKey(hash))
+                                                {
+                                                    hasAllObjects = false;
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                if (hasAllObjects)
+                                {
+                                    if (Directory.Exists(_clientInfo.Libraries))
+                                    {
+                                        if (_clientInfo.LibraryFiles.Any())
+                                        {
+                                            foreach (DownloadArtifact file in _clientInfo.LibraryFiles)
+                                            {
+                                                if (!File.Exists(Path.Combine(_clientInfo.Libraries, file.Downloads.Artifact.Path)))
+                                                {
+                                                    return false;
+                                                }
+                                            }
+                                            return true;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
-        using FileStream fs = new(cacheFile, FileMode.Open, FileAccess.Read, FileShare.Read);
-        using StreamReader reader = new(fs);
-        _clientInfo = JObject.Parse(reader.ReadToEnd()).ToObject<ClientInfo>() ?? _clientInfo;
-        return true;
+        return false;
     }
 
     /// <summary>
@@ -318,31 +395,31 @@ public class MinecraftClient : IDisposable
     }
 
     /// <summary>
+    /// Disposes the Minecraft client and releases any resources associated with it.
+    /// </summary>
+    public void Dispose()
+    {
+        _client.Dispose();
+    }
+
+    /// <summary>
     /// Builds the Java command required to start the Minecraft client process.
     /// </summary>
     /// <returns>The Java command as a string.</returns>
-    public string BuildJavaCommand()
+    private string BuildJavaCommand()
     {
         string cmd = "";
         string classPaths = string.Join(';', Directory.GetFiles(_clientInfo.Libraries, "*.jar", SearchOption.AllDirectories));
         try
         {
             string natives = Path.Combine(_clientInfo.ClientStartInfo.Directory, "natives", _clientInfo.Version.ID);
-            cmd = $"-Djava.library.path=\"{natives}\" -Djna.tmpdir=\"{natives}\" -Dorg.lwjgl.system.SharedLibraryExtractPath=\"{natives}\" -Dio.netty.native.workdir=\"{natives}\" -Dminecraft.launcher.brand=better-minecraft-launcher -Dminecraft.launcher.version=0.0.1 -cp \"{classPaths};{_clientInfo.ClientJar}\" net.minecraft.client.main.Main --username {_clientInfo.ClientStartInfo.Username} --version {_clientInfo.Version.ID} --gameDir \"{_clientInfo.InstanceDirectory}\" --assetsDir \"{_clientInfo.Assets}\" --assetIndex {_clientInfo.AssetIndex} --accessToken {_clientInfo.AuthenticationToken}";
+            cmd = $"-XX:HeapDumpPath=MojangT…_minecraft.exe.heapdump -Xss1M -XstartOnFirstThread -Djava.library.path=\"{natives}\" -Djna.tmpdir=\"{natives}\" -Dorg.lwjgl.system.SharedLibraryExtractPath=\"{natives}\" -Dio.netty.native.workdir=\"{natives}\" -Dminecraft.launcher.brand={_clientInfo.ClientName} -Dminecraft.launcher.version={_clientInfo.ClientVersion} -cp \"{classPaths};{_clientInfo.ClientJar}\" net.minecraft.client.main.Main --username {_clientInfo.ClientStartInfo.Username} --version {_clientInfo.Version.ID} --gameDir \"{_clientInfo.InstanceDirectory}\" --assetsDir \"{_clientInfo.Assets}\" --assetIndex {_clientInfo.AssetIndex} --accessToken {_clientInfo.AuthenticationToken} --clientId {_clientInfo.ClientID}";
         }
         catch (Exception e)
         {
             Console.WriteLine(e.StackTrace);
         }
         return cmd;
-    }
-
-    /// <summary>
-    /// Disposes the Minecraft client and releases any resources associated with it.
-    /// </summary>
-    public void Dispose()
-    {
-        _client.Dispose();
     }
 
     private void SaveToCache()
