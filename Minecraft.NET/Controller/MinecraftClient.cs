@@ -25,17 +25,16 @@ public class MinecraftClient : IDisposable
         if (response.IsSuccessStatusCode)
         {
             DownloadArtifact[] artifacts = JObject.Parse(await response.Content.ReadAsStringAsync())["libraries"]?.ToObject<DownloadArtifact[]>() ?? Array.Empty<DownloadArtifact>();
+            List<Task> tasks = new();
             foreach (DownloadArtifact artifact in artifacts)
             {
                 string absolutePath = Path.Combine(libBasePath, artifact.Downloads.Artifact.Path);
                 string filename = absolutePath.Split('/').Last();
                 await Console.Out.WriteLineAsync($"Downloading '{artifact.Downloads.Artifact.Path}'");
                 string directory = Directory.CreateDirectory(Directory.GetParent(absolutePath)?.FullName ?? "").FullName;
-                await _client.DownloadFileAsync(new Uri(artifact.Downloads.Artifact.Url), absolutePath, (s, e) =>
-                {
-                    Console.WriteLine(e.Percentage.ToString("P2"));
-                });
+                tasks.Add(_client.DownloadFileAsync(new Uri(artifact.Downloads.Artifact.Url), absolutePath, (s, e) => { }));
             }
+            Task.WaitAll(tasks.ToArray());
         }
         else
         {
@@ -57,6 +56,7 @@ public class MinecraftClient : IDisposable
 
             if (objects != null)
             {
+                List<Task> tasks = new();
                 foreach (JProperty property in objects.Properties())
                 {
                     string fileName = property.Name;
@@ -68,11 +68,9 @@ public class MinecraftClient : IDisposable
                     string directory = Directory.CreateDirectory(Directory.GetParent(absolutePath)?.FullName ?? "").FullName;
 
                     await Console.Out.WriteLineAsync($"Downloading '{fileName}'");
-                    await _client.DownloadFileAsync(new Uri(fileUrl), absolutePath, (s, e) =>
-                    {
-                        Console.WriteLine(e.Percentage.ToString("P2"));
-                    });
+                    tasks.Add(_client.DownloadFileAsync(new Uri(fileUrl), absolutePath, (s, e) => { }));
                 }
+                Task.WaitAll(tasks.ToArray());
             }
         }
         else
