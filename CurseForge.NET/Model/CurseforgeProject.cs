@@ -8,7 +8,7 @@ using System;
 public struct CurseforgeProject
 {
     [JsonProperty("id")]
-    public int Id { get; set; }
+    public long Id { get; set; }
 
     [JsonProperty("gameId")]
     public int GameId { get; set; }
@@ -230,7 +230,7 @@ public struct LatestFile
     public DateTime EarlyAccessEndDate { get; set; }
 
     [JsonProperty("fileFingerprint")]
-    public int FileFingerprint { get; set; }
+    public long FileFingerprint { get; set; }
 
     [JsonProperty("modules")]
     public Module[] Modules { get; set; }
@@ -278,7 +278,7 @@ public struct Module
     public string Name { get; set; }
 
     [JsonProperty("fingerprint")]
-    public int Fingerprint { get; set; }
+    public long Fingerprint { get; set; }
 }
 
 public struct LatestFileIndex
