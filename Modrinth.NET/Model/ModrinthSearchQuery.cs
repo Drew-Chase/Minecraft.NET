@@ -1,4 +1,6 @@
 ﻿// LFInteractive LLC. 2021-2024﻿
+using Chase.Minecraft.Modrinth.Data;
+
 namespace Chase.Minecraft.Modrinth.Model;
 
 public struct ModrinthSearchQuery

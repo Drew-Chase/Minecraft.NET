@@ -1,5 +1,6 @@
 ﻿// LFInteractive LLC. 2021-2024﻿
 using System.Text;
+using Chase.Minecraft.Modrinth.Data;
 
 namespace Chase.Minecraft.Modrinth;
 

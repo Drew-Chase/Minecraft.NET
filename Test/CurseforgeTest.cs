@@ -1,5 +1,5 @@
 ﻿// LFInteractive LLC. 2021-2024﻿
-using Chase.Minecraft.Curseforge;
+using Chase.Minecraft.Curseforge.Controller;
 
 namespace Test;
 

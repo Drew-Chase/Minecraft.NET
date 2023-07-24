@@ -4,7 +4,7 @@ using Chase.Networking;
 using Chase.Networking.Event;
 using Newtonsoft.Json.Linq;
 
-namespace Chase.Minecraft.Modrinth;
+namespace Chase.Minecraft.Modrinth.Controller;
 
 public sealed class ModrinthClient : IDisposable
 {

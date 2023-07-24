@@ -1,5 +1,6 @@
 ﻿// LFInteractive LLC. 2021-2024﻿
-namespace Chase.Minecraft;
+
+namespace Chase.Minecraft.Data;
 
 public static class Constants
 {

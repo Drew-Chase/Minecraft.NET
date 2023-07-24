@@ -3,7 +3,7 @@ using Chase.Minecraft.Curseforge.Model;
 using Chase.Networking;
 using Newtonsoft.Json.Linq;
 
-namespace Chase.Minecraft.Curseforge;
+namespace Chase.Minecraft.Curseforge.Controller;
 
 public class CurseforgeClient : IDisposable
 {

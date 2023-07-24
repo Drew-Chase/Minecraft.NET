@@ -1,4 +1,5 @@
 ﻿// LFInteractive LLC. 2021-2024﻿
+using Chase.Minecraft.Modrinth.Data;
 using Newtonsoft.Json;
 
 namespace Chase.Minecraft.Modrinth.Model;

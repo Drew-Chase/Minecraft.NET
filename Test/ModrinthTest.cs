@@ -1,5 +1,7 @@
 ﻿// LFInteractive LLC. 2021-2024﻿
 using Chase.Minecraft.Modrinth;
+using Chase.Minecraft.Modrinth.Controller;
+using Chase.Minecraft.Modrinth.Data;
 using Chase.Minecraft.Modrinth.Model;
 using System.Diagnostics;
 
