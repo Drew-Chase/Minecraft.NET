@@ -11,19 +11,15 @@ namespace Chase.Minecraft.Controller;
 public class MinecraftClient : IDisposable
 {
     private readonly NetworkClient _client;
-    private readonly ClientStartInfo _clientStartInfo;
-    private string assets = "";
-    private string assetIndex = "";
-    private string libraries = "";
-    private string clientJar = "";
-    private string authToken = "0";
-    private string instanceDirectory = "";
-    private MinecraftVersion version;
+    private ClientInfo _clientInfo;
 
     public MinecraftClient(ClientStartInfo clientStartInfo)
     {
         _client = new NetworkClient();
-        _clientStartInfo = clientStartInfo;
+        _clientInfo = new ClientInfo()
+        {
+            ClientStartInfo = clientStartInfo,
+        };
         Directory.CreateDirectory(clientStartInfo.Directory);
     }
 
@@ -49,8 +45,8 @@ public class MinecraftClient : IDisposable
 
     public void SetMinecraftVersion(MinecraftVersion version)
     {
-        this.version = version;
-        instanceDirectory = Path.Combine(_clientStartInfo.Directory, "instances", string.IsNullOrWhiteSpace(_clientStartInfo.Name) ? version.ID : _clientStartInfo.Name);
+        _clientInfo.Version = version;
+        _clientInfo.InstanceDirectory = Path.Combine(_clientInfo.ClientStartInfo.Directory, "instances", string.IsNullOrWhiteSpace(_clientInfo.ClientStartInfo.Name) ? _clientInfo.Version.ID : _clientInfo.ClientStartInfo.Name);
     }
 
     public Process Start(DataReceivedEventHandler? outputRecieved = null)
@@ -63,10 +59,10 @@ public class MinecraftClient : IDisposable
         {
             StartInfo = new()
             {
-                FileName = _clientStartInfo.JavaExecutable,
+                FileName = _clientInfo.ClientStartInfo.JavaExecutable,
                 Arguments = BuildJavaCommand(),
                 UseShellExecute = false,
-                WorkingDirectory = instanceDirectory
+                WorkingDirectory = _clientInfo.InstanceDirectory
             },
             EnableRaisingEvents = true,
         };
@@ -107,9 +103,9 @@ public class MinecraftClient : IDisposable
 
     public async Task DownloadLibraries()
     {
-        libraries = Directory.CreateDirectory(Path.Combine(_clientStartInfo.Directory, "libraries")).FullName;
+        _clientInfo.Libraries = Directory.CreateDirectory(Path.Combine(_clientInfo.ClientStartInfo.Directory, "libraries")).FullName;
 
-        using HttpResponseMessage response = await _client.GetAsync(version.URL);
+        using HttpResponseMessage response = await _client.GetAsync(_clientInfo.Version.URL);
 
         if (response.IsSuccessStatusCode)
         {
@@ -117,7 +113,7 @@ public class MinecraftClient : IDisposable
             List<Task> tasks = new();
             foreach (DownloadArtifact artifact in artifacts)
             {
-                string absolutePath = Path.Combine(libraries, artifact.Downloads.Artifact.Path);
+                string absolutePath = Path.Combine(_clientInfo.Libraries, artifact.Downloads.Artifact.Path);
                 string filename = absolutePath.Split('/').Last();
                 await Console.Out.WriteLineAsync($"Downloading '{artifact.Downloads.Artifact.Path}'");
                 string directory = Directory.CreateDirectory(Directory.GetParent(absolutePath)?.FullName ?? "").FullName;
@@ -136,7 +132,7 @@ public class MinecraftClient : IDisposable
     {
         string? url = null;
 
-        using (HttpResponseMessage response = await _client.GetAsync(version.URL))
+        using (HttpResponseMessage response = await _client.GetAsync(_clientInfo.Version.URL))
         {
             if (response.IsSuccessStatusCode)
             {
@@ -147,39 +143,34 @@ public class MinecraftClient : IDisposable
         if (url != null)
         {
             progressEvent ??= (s, e) => { };
-            clientJar = Path.Combine(Directory.CreateDirectory(Path.Combine(_clientStartInfo.Directory, "versions", version.ID)).FullName, "client.jar");
-            await _client.DownloadFileAsync(new(url), clientJar, progressEvent);
+            _clientInfo.ClientJar = Path.Combine(Directory.CreateDirectory(Path.Combine(_clientInfo.ClientStartInfo.Directory, "versions", _clientInfo.Version.ID)).FullName, "client.jar");
+            await _client.DownloadFileAsync(new(url), _clientInfo.ClientJar, progressEvent);
         }
         SaveToCache();
     }
 
     public bool LoadFromCache()
     {
-        string cacheFile = Path.Combine(Directory.CreateDirectory(Path.Combine(_clientStartInfo.Directory, "versions", version.ID)).FullName, "cache.json");
+        string cacheFile = Path.Combine(Directory.CreateDirectory(Path.Combine(_clientInfo.ClientStartInfo.Directory, "versions", _clientInfo.Version.ID)).FullName, "cache.json");
         if (!File.Exists(cacheFile))
         {
             return false;
         }
         using FileStream fs = new(cacheFile, FileMode.Open, FileAccess.Read, FileShare.Read);
         using StreamReader reader = new(fs);
-        JObject json = JObject.Parse(reader.ReadToEnd());
-        libraries = json["libraries"]?.ToObject<string>() ?? "";
-        assets = json["assets"]?.ToObject<string>() ?? "";
-        assetIndex = json["assetIndex"]?.ToObject<string>() ?? "";
-        authToken = json["authToken"]?.ToObject<string>() ?? "";
-        clientJar = json["clientJar"]?.ToObject<string>() ?? "";
+        _clientInfo = JObject.Parse(reader.ReadToEnd()).ToObject<ClientInfo>() ?? _clientInfo;
         return true;
     }
 
     public async Task DownloadAssets()
     {
-        string assetsBasePath = Directory.CreateDirectory(Path.Combine(_clientStartInfo.Directory, "assets")).FullName;
+        string assetsBasePath = Directory.CreateDirectory(Path.Combine(_clientInfo.ClientStartInfo.Directory, "assets")).FullName;
         string indexesPath = Directory.CreateDirectory(Path.Combine(assetsBasePath, "indexes")).FullName;
         string resourcesBaseUrl = "https://resources.download.minecraft.net/";
 
         string url = "";
         string index = "";
-        using (HttpResponseMessage response = await _client.GetAsync(version.URL))
+        using (HttpResponseMessage response = await _client.GetAsync(_clientInfo.Version.URL))
         {
             if (response.IsSuccessStatusCode)
             {
@@ -190,8 +181,8 @@ public class MinecraftClient : IDisposable
         }
         if (!string.IsNullOrWhiteSpace(url) && !string.IsNullOrWhiteSpace(index))
         {
-            assetIndex = index;
-            assets = assetsBasePath;
+            _clientInfo.AssetIndex = index;
+            _clientInfo.Assets = assetsBasePath;
             using HttpResponseMessage response = await _client.GetAsync(url);
             if (response.IsSuccessStatusCode)
             {
@@ -212,7 +203,7 @@ public class MinecraftClient : IDisposable
                         string subFolder = hash[..2];
                         string fileUrl = $"{resourcesBaseUrl}/{subFolder}/{hash}";
 
-                        string absolutePath = Path.Combine(assets, "objects", subFolder, hash);
+                        string absolutePath = Path.Combine(_clientInfo.Assets, "objects", subFolder, hash);
                         string directory = Directory.CreateDirectory(Directory.GetParent(absolutePath)?.FullName ?? "").FullName;
 
                         await Console.Out.WriteLineAsync($"Downloading '{fileName}'");
@@ -228,11 +219,11 @@ public class MinecraftClient : IDisposable
     public string BuildJavaCommand()
     {
         string cmd = "";
-        string classPaths = string.Join(';', Directory.GetFiles(libraries, "*.jar", SearchOption.AllDirectories));
+        string classPaths = string.Join(';', Directory.GetFiles(_clientInfo.Libraries, "*.jar", SearchOption.AllDirectories));
         try
         {
-            string natives = Path.Combine(_clientStartInfo.Directory, "natives", version.ID);
-            cmd = $"-Djava.library.path=\"{natives}\" -Djna.tmpdir=\"{natives}\" -Dorg.lwjgl.system.SharedLibraryExtractPath=\"{natives}\" -Dio.netty.native.workdir=\"{natives}\" -Dminecraft.launcher.brand=better-minecraft-launcher -Dminecraft.launcher.version=0.0.1 -cp \"{classPaths};{clientJar}\" net.minecraft.client.main.Main --username {_clientStartInfo.OfflineUsername} --version {version.ID} --gameDir \"{instanceDirectory}\" --assetsDir \"{assets}\" --assetIndex {assetIndex} --accessToken 0";
+            string natives = Path.Combine(_clientInfo.ClientStartInfo.Directory, "natives", _clientInfo.Version.ID);
+            cmd = $"-Djava.library.path=\"{natives}\" -Djna.tmpdir=\"{natives}\" -Dorg.lwjgl.system.SharedLibraryExtractPath=\"{natives}\" -Dio.netty.native.workdir=\"{natives}\" -Dminecraft.launcher.brand=better-minecraft-launcher -Dminecraft.launcher.version=0.0.1 -cp \"{classPaths};{_clientInfo.ClientJar}\" net.minecraft.client.main.Main --username {_clientInfo.ClientStartInfo.Username} --version {_clientInfo.Version.ID} --gameDir \"{_clientInfo.InstanceDirectory}\" --assetsDir \"{_clientInfo.Assets}\" --assetIndex {_clientInfo.AssetIndex} --accessToken {_clientInfo.AuthenticationToken}";
         }
         catch (Exception e)
         {
@@ -248,16 +239,9 @@ public class MinecraftClient : IDisposable
 
     private void SaveToCache()
     {
-        string cacheFile = Path.Combine(Directory.CreateDirectory(Path.Combine(_clientStartInfo.Directory, "versions", version.ID)).FullName, "cache.json");
+        string cacheFile = Path.Combine(Directory.CreateDirectory(Path.Combine(_clientInfo.ClientStartInfo.Directory, "versions", _clientInfo.Version.ID)).FullName, "cache.json");
         using FileStream fs = new(cacheFile, FileMode.Create, FileAccess.Write, FileShare.None);
         using StreamWriter writer = new(fs);
-        writer.Write(JsonConvert.SerializeObject(new
-        {
-            libraries,
-            assets,
-            assetIndex,
-            authToken,
-            clientJar
-        }));
+        writer.Write(JsonConvert.SerializeObject(_clientInfo));
     }
 }
