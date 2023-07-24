@@ -3,13 +3,16 @@ namespace Chase.Minecraft.Model;
 
 public struct ClientStartInfo
 {
+    public string Name { get; set; } = "";
     public required string Directory { get; set; }
 
-    public required string JVMArguments { get; set; }
+    public string JVMArguments { get; set; } = "";
+
+    public required string JavaExecutable { get; set; }
 
     public string? OfflineUsername { get; set; } = null;
 
-    public required RAMInfo RAM { get; set; }
+    public RAMInfo RAM { get; set; }
 
     public ClientStartInfo()
     {
@@ -18,7 +21,13 @@ public struct ClientStartInfo
 
 public struct RAMInfo
 {
-    public int MaximumRamMB { get; set; }
-    public int MinimumRamMB { get; set; }
-    public int PermGenSizeMB { get; set; }
+    public int MaximumRamMB { get; set; } = 4096;
+
+    public int MinimumRamMB { get; set; } = 4096;
+
+    public int PermGenSizeMB { get; set; } = 128;
+
+    public RAMInfo()
+    {
+    }
 }
