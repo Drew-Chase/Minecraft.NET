@@ -10,5 +10,9 @@ internal sealed class ClientInfo
     public string ClientJar { get; set; }
     public string AuthenticationToken { get; set; } = "0";
     public string InstanceDirectory { get; set; }
+    public string ClientID { get; set; } = "0";
+    public string ClientVersion { get; set; } = "0.0.0";
+    public string ClientName { get; set; } = "Minecraft.NET";
     public MinecraftVersion Version { get; set; }
+    public DownloadArtifact[] LibraryFiles { get; set; }
 }
