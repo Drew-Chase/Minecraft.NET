@@ -16,11 +16,34 @@ public class MinecraftClient : IDisposable
         _clientStartInfo = clientStartInfo;
     }
 
-    public async Task DownloadAllLibs(Uri manifestUri)
+    public async Task<MinecraftVersionManifest?> GetMinecraftVersionManifestAsync()
+    {
+        HttpResponseMessage response = await _client.GetAsync("https://launchermeta.mojang.com/mc/game/version_manifest.json");
+        if (response.IsSuccessStatusCode)
+        {
+            return JObject.Parse(await response.Content.ReadAsStringAsync())?.ToObject<MinecraftVersionManifest>();
+        }
+
+        return null;
+    }
+
+    public async Task<MinecraftVersion?> GetLatestMinecraftVersionAsync()
+    {
+        var manifest = await GetMinecraftVersionManifestAsync();
+        if (manifest != null && manifest.HasValue)
+        {
+            return manifest.Value.Versions.FirstOrDefault(i => i.ID == manifest?.Release);
+        }
+        return null;
+    }
+
+    public MinecraftVersionManifest? GetMinecraftVersionManifest() => GetMinecraftVersionManifestAsync().Result;
+
+    public async Task DownloadLibraries(MinecraftVersion version)
     {
         string libBasePath = Path.Combine(_clientStartInfo.Directory, "libraries");
 
-        HttpResponseMessage response = await _client.GetAsync(manifestUri);
+        HttpResponseMessage response = await _client.GetAsync(version.URL);
 
         if (response.IsSuccessStatusCode)
         {
@@ -42,12 +65,12 @@ public class MinecraftClient : IDisposable
         }
     }
 
-    public async Task DownloadAllAssets(Uri manifestUri)
+    public async Task DownloadAssets(MinecraftVersion version)
     {
         string libBasePath = Path.Combine(_clientStartInfo.Directory, "assets");
         string resourcesBaseUrl = "https://resources.download.minecraft.net/";
 
-        HttpResponseMessage response = await _client.GetAsync(manifestUri);
+        HttpResponseMessage response = await _client.GetAsync(version.URL);
 
         if (response.IsSuccessStatusCode)
         {
