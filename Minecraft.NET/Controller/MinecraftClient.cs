@@ -32,7 +32,7 @@ public class MinecraftClient : IDisposable
         var manifest = await GetMinecraftVersionManifestAsync();
         if (manifest != null && manifest.HasValue)
         {
-            return manifest.Value.Versions.FirstOrDefault(i => i.ID == manifest?.Release);
+            return manifest.Value.Versions.FirstOrDefault(i => i.ID == manifest?.Latest.Release);
         }
         return null;
     }
@@ -71,34 +71,37 @@ public class MinecraftClient : IDisposable
         string resourcesBaseUrl = "https://resources.download.minecraft.net/";
 
         HttpResponseMessage response = await _client.GetAsync(version.URL);
-
+        string url = "";
         if (response.IsSuccessStatusCode)
         {
             JObject json = JObject.Parse(await response.Content.ReadAsStringAsync());
-            JObject objects = json["objects"] as JObject;
-
-            if (objects != null)
-            {
-                List<Task> tasks = new();
-                foreach (JProperty property in objects.Properties())
-                {
-                    string fileName = property.Name;
-                    string hash = property.Value["hash"].ToString();
-                    string subFolder = hash.Substring(0, 2);
-                    string fileUrl = $"{resourcesBaseUrl}/{subFolder}/{hash}";
-
-                    string absolutePath = Path.Combine(libBasePath, fileName);
-                    string directory = Directory.CreateDirectory(Directory.GetParent(absolutePath)?.FullName ?? "").FullName;
-
-                    await Console.Out.WriteLineAsync($"Downloading '{fileName}'");
-                    tasks.Add(_client.DownloadFileAsync(new Uri(fileUrl), absolutePath, (s, e) => { }));
-                }
-                Task.WaitAll(tasks.ToArray());
-            }
+            url = json["assetIndex"]?["url"]?.ToObject<string>() ?? "";
         }
-        else
+        if (!string.IsNullOrWhiteSpace(url))
         {
-            Console.WriteLine("Request failed with status code: " + response.StatusCode);
+            response = await _client.GetAsync(url);
+            if (response.IsSuccessStatusCode)
+            {
+                JObject json = JObject.Parse(await response.Content.ReadAsStringAsync());
+                if (json["objects"] is JObject objects)
+                {
+                    List<Task> tasks = new();
+                    foreach (JProperty property in objects.Properties())
+                    {
+                        string fileName = property.Name;
+                        string hash = property.Value["hash"]?.ToString() ?? "";
+                        string subFolder = hash.Substring(0, 2);
+                        string fileUrl = $"{resourcesBaseUrl}/{subFolder}/{hash}";
+
+                        string absolutePath = Path.Combine(libBasePath, fileName);
+                        string directory = Directory.CreateDirectory(Directory.GetParent(absolutePath)?.FullName ?? "").FullName;
+
+                        await Console.Out.WriteLineAsync($"Downloading '{fileName}'");
+                        tasks.Add(_client.DownloadFileAsync(new Uri(fileUrl), absolutePath, (s, e) => { }));
+                    }
+                    Task.WaitAll(tasks.ToArray());
+                }
+            }
         }
     }
 
