@@ -8,11 +8,19 @@ using System.Diagnostics;
 
 namespace Chase.Minecraft.Controller;
 
+/// <summary>
+/// Represents a Minecraft client used to launch and interact with Minecraft game instances.
+/// </summary>
+/// <remarks>LFInteractive LLC. 2021-2024</remarks>
 public class MinecraftClient : IDisposable
 {
     private readonly NetworkClient _client;
     private ClientInfo _clientInfo;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MinecraftClient"/> class.
+    /// </summary>
+    /// <param name="clientStartInfo">Information required to start the Minecraft client.</param>
     public MinecraftClient(ClientStartInfo clientStartInfo)
     {
         _client = new NetworkClient();
@@ -23,6 +31,15 @@ public class MinecraftClient : IDisposable
         Directory.CreateDirectory(clientStartInfo.Directory);
     }
 
+    /// <summary>
+    /// Launches the Minecraft client with the specified version.
+    /// </summary>
+    /// <param name="startInfo">Information required to start the Minecraft client.</param>
+    /// <param name="version">The Minecraft version to launch.</param>
+    /// <param name="outputRecieved">
+    /// An optional event handler to receive the output data from the process.
+    /// </param>
+    /// <returns>The <see cref="Process"/> representing the launched Minecraft client.</returns>
     public static Process Launch(ClientStartInfo startInfo, string version, DataReceivedEventHandler? outputRecieved = null)
     {
         using MinecraftClient client = new(startInfo);
@@ -35,6 +52,15 @@ public class MinecraftClient : IDisposable
         throw new NullReferenceException($"No minecraft version could be found with id of \"{version}\"");
     }
 
+    /// <summary>
+    /// Launches the Minecraft client with the specified MinecraftVersion object.
+    /// </summary>
+    /// <param name="startInfo">Information required to start the Minecraft client.</param>
+    /// <param name="version">The MinecraftVersion object to launch.</param>
+    /// <param name="outputRecieved">
+    /// An optional event handler to receive the output data from the process.
+    /// </param>
+    /// <returns>The <see cref="Process"/> representing the launched Minecraft client.</returns>
     public static Process Launch(ClientStartInfo startInfo, MinecraftVersion version, DataReceivedEventHandler? outputRecieved = null)
     {
         using MinecraftClient client = new(startInfo);
@@ -43,12 +69,23 @@ public class MinecraftClient : IDisposable
         return client.Start(outputRecieved);
     }
 
+    /// <summary>
+    /// Sets the Minecraft version to be used for launching the client.
+    /// </summary>
+    /// <param name="version">The Minecraft version to set.</param>
     public void SetMinecraftVersion(MinecraftVersion version)
     {
         _clientInfo.Version = version;
         _clientInfo.InstanceDirectory = Path.Combine(_clientInfo.ClientStartInfo.Directory, "instances", string.IsNullOrWhiteSpace(_clientInfo.ClientStartInfo.Name) ? _clientInfo.Version.ID : _clientInfo.ClientStartInfo.Name);
     }
 
+    /// <summary>
+    /// Starts the Minecraft client process.
+    /// </summary>
+    /// <param name="outputRecieved">
+    /// An optional event handler to receive the output data from the process.
+    /// </param>
+    /// <returns>The <see cref="Process"/> representing the started Minecraft client process.</returns>
     public Process Start(DataReceivedEventHandler? outputRecieved = null)
     {
         if (!LoadFromCache())
@@ -74,10 +111,30 @@ public class MinecraftClient : IDisposable
         return process;
     }
 
+    /// <summary>
+    /// Asynchronously gets a MinecraftVersion object by its name.
+    /// </summary>
+    /// <param name="name">The name of the Minecraft version to retrieve.</param>
+    /// <returns>
+    /// A Task that represents the asynchronous operation. The task result contains the retrieved
+    /// MinecraftVersion object, if found; otherwise, null.
+    /// </returns>
     public async Task<MinecraftVersion?> GetVersionByNameAsync(string name) => (await GetMinecraftVersionManifestAsync())?.Versions.First(i => i.ID == name);
 
+    /// <summary>
+    /// Gets a MinecraftVersion object by its name.
+    /// </summary>
+    /// <param name="name">The name of the Minecraft version to retrieve.</param>
+    /// <returns>The retrieved MinecraftVersion object, if found; otherwise, null.</returns>
     public MinecraftVersion? GetVersionByName(string name) => GetVersionByNameAsync(name).Result;
 
+    /// <summary>
+    /// Asynchronously gets the Minecraft version manifest.
+    /// </summary>
+    /// <returns>
+    /// A Task that represents the asynchronous operation. The task result contains the retrieved
+    /// MinecraftVersionManifest object, if successful; otherwise, null.
+    /// </returns>
     public async Task<MinecraftVersionManifest?> GetMinecraftVersionManifestAsync()
     {
         using HttpResponseMessage response = await _client.GetAsync("https://launchermeta.mojang.com/mc/game/version_manifest.json");
@@ -89,6 +146,13 @@ public class MinecraftClient : IDisposable
         return null;
     }
 
+    /// <summary>
+    /// Asynchronously gets the latest Minecraft version from the version manifest.
+    /// </summary>
+    /// <returns>
+    /// A Task that represents the asynchronous operation. The task result contains the latest
+    /// MinecraftVersion object, if successful; otherwise, null.
+    /// </returns>
     public async Task<MinecraftVersion?> GetLatestMinecraftVersionAsync()
     {
         var manifest = await GetMinecraftVersionManifestAsync();
@@ -99,8 +163,19 @@ public class MinecraftClient : IDisposable
         return null;
     }
 
+    /// <summary>
+    /// Gets the Minecraft version manifest.
+    /// </summary>
+    /// <returns>The retrieved MinecraftVersionManifest object, if successful; otherwise, null.</returns>
     public MinecraftVersionManifest? GetMinecraftVersionManifest() => GetMinecraftVersionManifestAsync().Result;
 
+    /// <summary>
+    /// Asynchronously downloads the Minecraft libraries required for the specified version.
+    /// </summary>
+    /// <remarks>
+    /// Libraries will be saved in a "libraries" directory under the specified ClientStartInfo's directory.
+    /// </remarks>
+    /// <returns>A Task that represents the asynchronous operation.</returns>
     public async Task DownloadLibraries()
     {
         _clientInfo.Libraries = Directory.CreateDirectory(Path.Combine(_clientInfo.ClientStartInfo.Directory, "libraries")).FullName;
@@ -128,6 +203,18 @@ public class MinecraftClient : IDisposable
         }
     }
 
+    /// <summary>
+    /// Asynchronously downloads the Minecraft client JAR file for the specified version.
+    /// </summary>
+    /// <param name="progressEvent">
+    /// An optional event handler to receive the download progress data.
+    /// </param>
+    /// <remarks>
+    /// The client JAR will be saved in a "versions/{versionID}" directory under the specified
+    /// ClientStartInfo's directory.
+    /// </remarks>
+    /// <returns>A Task that represents the asynchronous operation.</returns>
+
     public async Task DownloadClient(DownloadProgressEvent? progressEvent = null)
     {
         string? url = null;
@@ -149,6 +236,12 @@ public class MinecraftClient : IDisposable
         SaveToCache();
     }
 
+    /// <summary>
+    /// Loads the Minecraft client information from the cache if available.
+    /// </summary>
+    /// <returns>
+    /// <c>true</c> if the client information was loaded from the cache; otherwise, <c>false</c>.
+    /// </returns>
     public bool LoadFromCache()
     {
         string cacheFile = Path.Combine(Directory.CreateDirectory(Path.Combine(_clientInfo.ClientStartInfo.Directory, "versions", _clientInfo.Version.ID)).FullName, "cache.json");
@@ -161,6 +254,14 @@ public class MinecraftClient : IDisposable
         _clientInfo = JObject.Parse(reader.ReadToEnd()).ToObject<ClientInfo>() ?? _clientInfo;
         return true;
     }
+
+    /// <summary>
+    /// Asynchronously downloads the Minecraft assets for the specified version.
+    /// </summary>
+    /// <remarks>
+    /// Assets will be saved in an "assets" directory under the specified ClientStartInfo's directory.
+    /// </remarks>
+    /// <returns>A Task that represents the asynchronous operation.</returns>
 
     public async Task DownloadAssets()
     {
@@ -216,6 +317,10 @@ public class MinecraftClient : IDisposable
         }
     }
 
+    /// <summary>
+    /// Builds the Java command required to start the Minecraft client process.
+    /// </summary>
+    /// <returns>The Java command as a string.</returns>
     public string BuildJavaCommand()
     {
         string cmd = "";
@@ -232,6 +337,9 @@ public class MinecraftClient : IDisposable
         return cmd;
     }
 
+    /// <summary>
+    /// Disposes the Minecraft client and releases any resources associated with it.
+    /// </summary>
     public void Dispose()
     {
         _client.Dispose();
