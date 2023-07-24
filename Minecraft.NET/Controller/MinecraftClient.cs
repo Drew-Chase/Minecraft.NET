@@ -16,11 +16,11 @@ public class MinecraftClient : IDisposable
         _clientStartInfo = clientStartInfo;
     }
 
-    public async Task DownloadAllLibs()
+    public async Task DownloadAllLibs(Uri manifestUri)
     {
         string libBasePath = Path.Combine(_clientStartInfo.Directory, "libraries");
 
-        HttpResponseMessage response = await _client.GetAsync("https://piston-meta.mojang.com/v1/packages/715ccf3330885e75b205124f09f8712542cbe7e0/1.20.1.json");
+        HttpResponseMessage response = await _client.GetAsync(manifestUri);
 
         if (response.IsSuccessStatusCode)
         {
@@ -35,6 +35,44 @@ public class MinecraftClient : IDisposable
                 {
                     Console.WriteLine(e.Percentage.ToString("P2"));
                 });
+            }
+        }
+        else
+        {
+            Console.WriteLine("Request failed with status code: " + response.StatusCode);
+        }
+    }
+
+    public async Task DownloadAllAssets(Uri manifestUri)
+    {
+        string libBasePath = Path.Combine(_clientStartInfo.Directory, "assets");
+        string resourcesBaseUrl = "https://resources.download.minecraft.net/";
+
+        HttpResponseMessage response = await _client.GetAsync(manifestUri);
+
+        if (response.IsSuccessStatusCode)
+        {
+            JObject json = JObject.Parse(await response.Content.ReadAsStringAsync());
+            JObject objects = json["objects"] as JObject;
+
+            if (objects != null)
+            {
+                foreach (JProperty property in objects.Properties())
+                {
+                    string fileName = property.Name;
+                    string hash = property.Value["hash"].ToString();
+                    string subFolder = hash.Substring(0, 2);
+                    string fileUrl = $"{resourcesBaseUrl}/{subFolder}/{hash}";
+
+                    string absolutePath = Path.Combine(libBasePath, fileName);
+                    string directory = Directory.CreateDirectory(Directory.GetParent(absolutePath)?.FullName ?? "").FullName;
+
+                    await Console.Out.WriteLineAsync($"Downloading '{fileName}'");
+                    await _client.DownloadFileAsync(new Uri(fileUrl), absolutePath, (s, e) =>
+                    {
+                        Console.WriteLine(e.Percentage.ToString("P2"));
+                    });
+                }
             }
         }
         else
