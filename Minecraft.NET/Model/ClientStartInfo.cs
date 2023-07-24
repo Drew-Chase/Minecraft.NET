@@ -10,7 +10,7 @@ public struct ClientStartInfo
 
     public required string JavaExecutable { get; set; }
 
-    public string? OfflineUsername { get; set; } = null;
+    public required string Username { get; set; }
 
     public RAMInfo RAM { get; set; }
 
