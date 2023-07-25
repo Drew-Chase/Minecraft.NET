@@ -413,7 +413,7 @@ public class MinecraftClient : IDisposable
         try
         {
             string natives = Path.Combine(_clientInfo.ClientStartInfo.Directory, "natives", _clientInfo.Version.ID);
-            cmd = $"-XX:HeapDumpPath=MojangT…_minecraft.exe.heapdump -Xss1M -XstartOnFirstThread -Djava.library.path=\"{natives}\" -Djna.tmpdir=\"{natives}\" -Dorg.lwjgl.system.SharedLibraryExtractPath=\"{natives}\" -Dio.netty.native.workdir=\"{natives}\" -Dminecraft.launcher.brand={_clientInfo.ClientName} -Dminecraft.launcher.version={_clientInfo.ClientVersion} -cp \"{classPaths};{_clientInfo.ClientJar}\" net.minecraft.client.main.Main --username {_clientInfo.ClientStartInfo.Username} --version {_clientInfo.Version.ID} --gameDir \"{_clientInfo.InstanceDirectory}\" --assetsDir \"{_clientInfo.Assets}\" --assetIndex {_clientInfo.AssetIndex} --accessToken {_clientInfo.AuthenticationToken} --clientId {_clientInfo.ClientID}";
+            cmd = $"-XX:HeapDumpPath=MojangTricksIntelDriversForPerformance_javaw.exe_minecraft.exe.heapdump -Xss1M -Djava.library.path=\"{natives}\" -Djna.tmpdir=\"{natives}\" -Dorg.lwjgl.system.SharedLibraryExtractPath=\"{natives}\" -Dio.netty.native.workdir=\"{natives}\" -Dminecraft.launcher.brand={_clientInfo.ClientName} -Dminecraft.launcher.version={_clientInfo.ClientVersion} -cp \"{classPaths};{_clientInfo.ClientJar}\" net.minecraft.client.main.Main --username {_clientInfo.ClientStartInfo.Username} --version {_clientInfo.Version.ID} --gameDir \"{_clientInfo.InstanceDirectory}\" --assetsDir \"{_clientInfo.Assets}\" --assetIndex {_clientInfo.AssetIndex} --accessToken  --clientId {_clientInfo.ClientID}";
         }
         catch (Exception e)
         {
