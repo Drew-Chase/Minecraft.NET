@@ -36,13 +36,19 @@ public class CurseforgeClient : IDisposable
 
     public Task<CurseforgeSearchResult?> SearchModpackAsync(string query, string gameVersion, ModLoaders loaders) => SearchAsync(query, MODPACKS_SECTION_ID, gameVersion, loaders);
 
-    public Task<CurseforgeSearchResult?> SearchWorldsAsync(string query, string gameVersion, ModLoaders loaders) => SearchAsync(query, WORLDS_SECTION_ID, gameVersion, loaders);
+    public Task<CurseforgeSearchResult?> SearchWorldsAsync(string query, string gameVersion) => SearchAsync(query, WORLDS_SECTION_ID, gameVersion, null);
 
-    public Task<CurseforgeSearchResult?> SearchResourcepacksAsync(string query, string gameVersion, ModLoaders loaders) => SearchAsync(query, RESOURCE_PACKS_SECTION_ID, gameVersion, loaders);
+    public Task<CurseforgeSearchResult?> SearchResourcepacksAsync(string query, string gameVersion) => SearchAsync(query, RESOURCE_PACKS_SECTION_ID, gameVersion, null);
 
-    private async Task<CurseforgeSearchResult?> SearchAsync(string query, int classId, string gameVersion, ModLoaders loader)
+    private async Task<CurseforgeSearchResult?> SearchAsync(string query, int classId, string gameVersion, ModLoaders? loader)
     {
-        using HttpRequestMessage request = new(HttpMethod.Get, $"{BASE_URI}mods/search?searchFilter={query}&gameId={GAME_ID}&classId={classId}&modLoaderType={loader}&gameVersion={gameVersion}");
+        string url = $"{BASE_URI}mods/search?searchFilter={query}&gameId={GAME_ID}&classId={classId}&gameVersion={gameVersion}";
+        if (loader != null)
+        {
+            url += $"&modLoaderType={loader}";
+        }
+        await Console.Out.WriteLineAsync(url);
+        using HttpRequestMessage request = new(HttpMethod.Get, url);
         request.Headers.Add("x-api-key", _api);
         HttpResponseMessage response = await _client.SendAsync(request);
         if (response.IsSuccessStatusCode)
