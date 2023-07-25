@@ -10,6 +10,7 @@
   <ItemGroup>
     <PackageReference Include="Chase.Networking" Version="0.0.1" />
     <PackageReference Include="Microsoft.Identity.Client" Version="4.55.0" />
+    <PackageReference Include="Microsoft.Identity.Client.Extensions.Msal" Version="2.32.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
 
