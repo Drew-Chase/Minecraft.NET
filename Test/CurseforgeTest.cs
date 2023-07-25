@@ -8,15 +8,45 @@ internal static class CurseforgeTest
     public static async Task Start()
     {
         using CurseforgeClient client = new("$2a$10$qD2UJdpHaeDaQyGGaGS0QeoDnKq2EC7sX6YSjOxYHtDZSQRg04BCG");
-        await Search(client);
+        await SearchMod(client);
+        await SearchModpack(client);
+        await SearchResourcepack(client);
+        await SearchWorlds(client);
     }
 
-    private static async Task Search(CurseforgeClient client)
+    private static async Task SearchMod(CurseforgeClient client)
     {
         var project = await client.SearchModsAsync("Warp", "1.19.4", Chase.Minecraft.ModLoaders.Fabric);
         Console.ForegroundColor = project == null ? ConsoleColor.Red : ConsoleColor.Green;
         Console.Write($"[{(project == null ? "FAIL" : "SUCCESS")}]");
         Console.ResetColor();
         Console.WriteLine($" Search Curseforge Mod!");
+    }
+
+    private static async Task SearchModpack(CurseforgeClient client)
+    {
+        var project = await client.SearchModpackAsync("Warp", "1.19.4", Chase.Minecraft.ModLoaders.Fabric);
+        Console.ForegroundColor = project == null ? ConsoleColor.Red : ConsoleColor.Green;
+        Console.Write($"[{(project == null ? "FAIL" : "SUCCESS")}]");
+        Console.ResetColor();
+        Console.WriteLine($" Search Curseforge Modpack!");
+    }
+
+    private static async Task SearchResourcepack(CurseforgeClient client)
+    {
+        var project = await client.SearchResourcepacksAsync("Faithful", "1.19.4");
+        Console.ForegroundColor = project == null ? ConsoleColor.Red : ConsoleColor.Green;
+        Console.Write($"[{(project == null ? "FAIL" : "SUCCESS")}]");
+        Console.ResetColor();
+        Console.WriteLine($" Search Curseforge Resourcepacks!");
+    }
+
+    private static async Task SearchWorlds(CurseforgeClient client)
+    {
+        var project = await client.SearchWorldsAsync("OneBlock ", "1.19.4");
+        Console.ForegroundColor = project == null ? ConsoleColor.Red : ConsoleColor.Green;
+        Console.Write($"[{(project == null ? "FAIL" : "SUCCESS")}]");
+        Console.ResetColor();
+        Console.WriteLine($" Search Curseforge World!");
     }
 }
