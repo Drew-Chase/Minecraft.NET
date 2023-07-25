@@ -1,4 +1,5 @@
 ﻿// LFInteractive LLC. 2021-2024﻿
+using Chase.Minecraft.Authentication;
 using Chase.Minecraft.Model;
 using Chase.Networking;
 using Chase.Networking.Event;
@@ -15,7 +16,9 @@ namespace Chase.Minecraft.Controller;
 public class MinecraftClient : IDisposable
 {
     private readonly NetworkClient _client;
+    private readonly string Username;
     private ClientInfo _clientInfo;
+    private bool isAuthenticated = false;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MinecraftClient"/> class.
@@ -28,7 +31,13 @@ public class MinecraftClient : IDisposable
         {
             ClientStartInfo = clientStartInfo,
         };
-        Directory.CreateDirectory(clientStartInfo.Directory);
+        Username = clientStartInfo.Username;
+        Directory.CreateDirectory(Path.GetFullPath(clientStartInfo.Directory));
+    }
+
+    public MinecraftClient(ClientStartInfo clientStartInfo, string clientId, string clientName, string clientVersion) : this(clientStartInfo)
+    {
+        SetClientInfo(clientId, clientName, clientVersion);
     }
 
     /// <summary>
@@ -43,7 +52,7 @@ public class MinecraftClient : IDisposable
     public static Process Launch(ClientStartInfo startInfo, string version, DataReceivedEventHandler? outputRecieved = null)
     {
         using MinecraftClient client = new(startInfo);
-        MinecraftVersion? minecraftVersion = client.GetVersionByName(version);
+        MinecraftVersion? minecraftVersion = client.GetMinecraftVersionByName(version);
         if (minecraftVersion != null && minecraftVersion.HasValue)
         {
             client.SetMinecraftVersion(minecraftVersion.Value);
@@ -84,9 +93,21 @@ public class MinecraftClient : IDisposable
         _clientInfo.ClientVersion = clientVersion;
     }
 
-    public async Task AuthenticateUser()
+    public async Task<bool> AuthenticateUser()
     {
-        await MicrosoftAuthenticationController.LogIn(_clientInfo.ClientID);
+        if (!string.IsNullOrWhiteSpace(_clientInfo.ClientID))
+        {
+            using MicrosoftAuthentication auth = new(_clientInfo.ClientID);
+            string? token = await auth.GetMinecraftBearerAccessToken();
+            if (token != null)
+            {
+                _clientInfo.AuthenticationToken = token;
+                isAuthenticated = true;
+                return true;
+            }
+        }
+        isAuthenticated = false;
+        return false;
     }
 
     /// <summary>
@@ -98,6 +119,8 @@ public class MinecraftClient : IDisposable
         _clientInfo.Version = version;
         _clientInfo.InstanceDirectory = Path.Combine(_clientInfo.ClientStartInfo.Directory, "instances", string.IsNullOrWhiteSpace(_clientInfo.ClientStartInfo.Name) ? _clientInfo.Version.ID : _clientInfo.ClientStartInfo.Name);
     }
+
+    public void SetMinecraftVersion(string version) => SetMinecraftVersion(GetMinecraftVersionByName(version).Value);
 
     /// <summary>
     /// Starts the Minecraft client process.
@@ -146,7 +169,7 @@ public class MinecraftClient : IDisposable
     /// </summary>
     /// <param name="name">The name of the Minecraft version to retrieve.</param>
     /// <returns>The retrieved MinecraftVersion object, if found; otherwise, null.</returns>
-    public MinecraftVersion? GetVersionByName(string name) => GetVersionByNameAsync(name).Result;
+    public MinecraftVersion? GetMinecraftVersionByName(string name) => GetVersionByNameAsync(name).Result;
 
     /// <summary>
     /// Asynchronously gets the Minecraft version manifest.
@@ -413,7 +436,7 @@ public class MinecraftClient : IDisposable
         try
         {
             string natives = Path.Combine(_clientInfo.ClientStartInfo.Directory, "natives", _clientInfo.Version.ID);
-            cmd = $"-XX:HeapDumpPath=MojangTricksIntelDriversForPerformance_javaw.exe_minecraft.exe.heapdump -Xss1M -Djava.library.path=\"{natives}\" -Djna.tmpdir=\"{natives}\" -Dorg.lwjgl.system.SharedLibraryExtractPath=\"{natives}\" -Dio.netty.native.workdir=\"{natives}\" -Dminecraft.launcher.brand={_clientInfo.ClientName} -Dminecraft.launcher.version={_clientInfo.ClientVersion} -cp \"{classPaths};{_clientInfo.ClientJar}\" net.minecraft.client.main.Main --username {_clientInfo.ClientStartInfo.Username} --version {_clientInfo.Version.ID} --gameDir \"{_clientInfo.InstanceDirectory}\" --assetsDir \"{_clientInfo.Assets}\" --assetIndex {_clientInfo.AssetIndex} --accessToken  --clientId {_clientInfo.ClientID}";
+            cmd = $"-XX:HeapDumpPath=MojangTricksIntelDriversForPerformance_javaw.exe_minecraft.exe.heapdump -Xss1M -Djava.library.path=\"{natives}\" -Djna.tmpdir=\"{natives}\" -Dorg.lwjgl.system.SharedLibraryExtractPath=\"{natives}\" -Dio.netty.native.workdir=\"{natives}\" -Dminecraft.launcher.brand={_clientInfo.ClientName} -Dminecraft.launcher.version={_clientInfo.ClientVersion} -cp \"{classPaths};{_clientInfo.ClientJar}\" net.minecraft.client.main.Main --username {Username} --version {_clientInfo.Version.ID} --gameDir \"{_clientInfo.InstanceDirectory}\" --assetsDir \"{_clientInfo.Assets}\" --assetIndex {_clientInfo.AssetIndex} --accessToken {_clientInfo.AuthenticationToken} --clientId {_clientInfo.ClientID}";
         }
         catch (Exception e)
         {
