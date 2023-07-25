@@ -1,4 +1,10 @@
-﻿// LFInteractive LLC. 2021-2024﻿
+﻿/*
+    Minecraft.NET - LFInteractive LLC. 2021-2024﻿
+    Minecraft.NET and its libraries are a collection of minecraft related libraries to handle downloading mods, modpacks, resourcepacks, and downloading and installing modloaders (fabric, forge, etc)
+    Licensed under GPL-3.0
+    https://www.gnu.org/licenses/gpl-3.0.en.html#license-text
+*/
+
 using Chase.Minecraft.Curseforge.Model;
 using Chase.Networking;
 using Newtonsoft.Json.Linq;
@@ -9,11 +15,6 @@ public class CurseforgeClient : IDisposable
 {
     private static readonly string BASE_URI = "https://api.curseforge.com/v1/";
     private static readonly int GAME_ID = 432;
-    private static readonly int FORGE_MODLOADER_ID = 1;
-    private static readonly int FABRIC_MODLOADER_ID = 4;
-    private static readonly int FABRIC_MOD_ID = 306612;
-    private static readonly int LEGACY_FABRIC_MOD_ID = 400281;
-    private static readonly int JUMPLOADER_MOD_ID = 361988;
     private static readonly int MODS_SECTION_ID = 6;
     private static readonly int MODPACKS_SECTION_ID = 4471;
     private static readonly int RESOURCE_PACKS_SECTION_ID = 12;
