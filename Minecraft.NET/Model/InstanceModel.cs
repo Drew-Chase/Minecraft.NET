@@ -19,6 +19,7 @@ public sealed class InstanceModel
     public string MinecraftArguments { get; set; } = "";
     public RAMInfo RAM { get; set; } = new();
     public ModLoaderModel ModLoader { get; set; }
+    public ModModel[] Mods { get; set; } = Array.Empty<ModModel>();
     public MinecraftVersion MinecraftVersion { get; set; }
     public DateTime Created { get; set; } = DateTime.Now;
     public DateTime LastModified { get; set; } = DateTime.Now;
