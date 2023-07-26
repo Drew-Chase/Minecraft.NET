@@ -188,7 +188,14 @@ public sealed class ModrinthClient : IDisposable
     {
         downloadProgress ??= (s, e) => { };
         string path = Path.Combine(Directory.CreateDirectory(Path.Combine(instance.Path, "mods")).FullName, versionFile.Filename);
+        instance.InstanceManager.AddMod(instance, new()
+        {
+            Source = Minecraft.Data.PlatformSource.Modrinth,
+            DownloadURL = versionFile.Url,
+            Name = versionFile.Filename,
+        });
         await _client.DownloadFileAsync(new(versionFile.Url), path, downloadProgress);
+
         return path;
     }
 
