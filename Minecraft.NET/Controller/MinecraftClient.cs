@@ -34,17 +34,17 @@ public class MinecraftClient : IDisposable
     /// Initializes a new instance of the <see cref="MinecraftClient"/> class.
     /// </summary>
     /// <param name="instance">Information required to start the Minecraft client.</param>
-    public MinecraftClient(string username, string rootDirectory, InstanceManager manager, InstanceModel instance)
+    public MinecraftClient(string username, string rootDirectory, InstanceModel instance)
     {
         _client = new NetworkClient();
         _clientInfo = new();
         Username = username;
         this.instance = instance;
-        this.manager = manager;
+        this.manager = instance.InstanceManager;
         this.rootDirectory = Directory.CreateDirectory(rootDirectory).FullName;
     }
 
-    public MinecraftClient(string username, string rootDirectory, InstanceManager manager, InstanceModel instance, string clientId, string clientName, string clientVersion) : this(username, rootDirectory, manager, instance)
+    public MinecraftClient(string username, string rootDirectory, InstanceModel instance, string clientId, string clientName, string clientVersion) : this(username, rootDirectory, instance)
     {
         SetClientInfo(clientId, clientName, clientVersion);
     }
@@ -58,9 +58,9 @@ public class MinecraftClient : IDisposable
     /// An optional event handler to receive the output data from the process.
     /// </param>
     /// <returns>The <see cref="Process"/> representing the launched Minecraft client.</returns>
-    public static Process Launch(string username, string rootDirectory, InstanceManager manager, InstanceModel instance, DataReceivedEventHandler? outputRecieved = null)
+    public static Process Launch(string username, string rootDirectory, InstanceModel instance, DataReceivedEventHandler? outputRecieved = null)
     {
-        using MinecraftClient client = new(username, rootDirectory, manager, instance);
+        using MinecraftClient client = new(username, rootDirectory, instance);
         return client.Start(outputRecieved);
     }
 
@@ -342,7 +342,25 @@ public class MinecraftClient : IDisposable
         try
         {
             string natives = Directory.CreateDirectory(Path.Combine(rootDirectory, "natives", instance.MinecraftVersion.ID)).FullName;
-            cmd = $"-XX:HeapDumpPath=MojangTricksIntelDriversForPerformance_javaw.exe_minecraft.exe.heapdump -Xss1M -Djava.library.path=\"{natives}\" -Djna.tmpdir=\"{natives}\" -Dorg.lwjgl.system.SharedLibraryExtractPath=\"{natives}\" -Dio.netty.native.workdir=\"{natives}\" -Dminecraft.launcher.brand={_clientInfo.ClientName} -Dminecraft.launcher.version={_clientInfo.ClientVersion} -cp \"{classPaths};{instance.ClientJar}\" net.minecraft.client.main.Main --username {Username} --version {instance.MinecraftVersion.ID} --gameDir \"{instance.Path}\" --assetsDir \"{_clientInfo.Assets}\" --assetIndex {_clientInfo.AssetIndex} --accessToken {_clientInfo.AuthenticationToken} --clientId {_clientInfo.ClientID}";
+            string jvm = $"{instance.JVMArguments} " +
+                $"-XX:HeapDumpPath=MojangTricksIntelDriversForPerformance_javaw.exe_minecraft.exe.heapdump " +
+                $"-Xss1M -Djava.library.path=\"{natives}\" -Djna.tmpdir=\"{natives}\" " +
+                $"-Dorg.lwjgl.system.SharedLibraryExtractPath=\"{natives}\" " +
+                $"-Dio.netty.native.workdir=\"{natives}\" " +
+                $"-Dminecraft.launcher.brand={_clientInfo.ClientName} " +
+                $"-Dminecraft.launcher.version={_clientInfo.ClientVersion} " +
+                $"-cp \"{classPaths};{instance.ClientJar}\" ";
+
+            string minecraftArgs = $"{instance.MinecraftArguments} " +
+                $"--username {Username} " +
+                $"--version {instance.MinecraftVersion.ID} " +
+                $"--gameDir \"{instance.Path}\" " +
+                $"--assetsDir \"{_clientInfo.Assets}\" " +
+                $"--assetIndex {_clientInfo.AssetIndex} " +
+                $"--accessToken {_clientInfo.AuthenticationToken} " +
+                $"--clientId {_clientInfo.ClientID}";
+
+            cmd = $"{jvm} net.minecraft.client.main.Main {minecraftArgs}";
         }
         catch (Exception e)
         {
