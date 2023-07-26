@@ -6,6 +6,7 @@
 */
 
 using Chase.Minecraft.Authentication;
+using Chase.Minecraft.Instances;
 using Chase.Minecraft.Model;
 using Chase.Networking;
 using Chase.Networking.Event;
@@ -23,25 +24,27 @@ public class MinecraftClient : IDisposable
 {
     private readonly NetworkClient _client;
     private readonly string Username;
+    private readonly InstanceManager manager;
+    private readonly string rootDirectory;
+    private InstanceModel instance;
     private ClientInfo _clientInfo;
     private bool isAuthenticated = false;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MinecraftClient"/> class.
     /// </summary>
-    /// <param name="clientStartInfo">Information required to start the Minecraft client.</param>
-    public MinecraftClient(ClientStartInfo clientStartInfo)
+    /// <param name="instance">Information required to start the Minecraft client.</param>
+    public MinecraftClient(string username, string rootDirectory, InstanceManager manager, InstanceModel instance)
     {
         _client = new NetworkClient();
-        _clientInfo = new ClientInfo()
-        {
-            ClientStartInfo = clientStartInfo,
-        };
-        Username = clientStartInfo.Username;
-        Directory.CreateDirectory(Path.GetFullPath(clientStartInfo.Directory));
+        _clientInfo = new();
+        Username = username;
+        this.instance = instance;
+        this.manager = manager;
+        this.rootDirectory = Directory.CreateDirectory(rootDirectory).FullName;
     }
 
-    public MinecraftClient(ClientStartInfo clientStartInfo, string clientId, string clientName, string clientVersion) : this(clientStartInfo)
+    public MinecraftClient(string username, string rootDirectory, InstanceManager manager, InstanceModel instance, string clientId, string clientName, string clientVersion) : this(username, rootDirectory, manager, instance)
     {
         SetClientInfo(clientId, clientName, clientVersion);
     }
@@ -49,38 +52,15 @@ public class MinecraftClient : IDisposable
     /// <summary>
     /// Launches the Minecraft client with the specified version.
     /// </summary>
-    /// <param name="startInfo">Information required to start the Minecraft client.</param>
+    /// <param name="instance">Information required to start the Minecraft client.</param>
     /// <param name="version">The Minecraft version to launch.</param>
     /// <param name="outputRecieved">
     /// An optional event handler to receive the output data from the process.
     /// </param>
     /// <returns>The <see cref="Process"/> representing the launched Minecraft client.</returns>
-    public static Process Launch(ClientStartInfo startInfo, string version, DataReceivedEventHandler? outputRecieved = null)
+    public static Process Launch(string username, string rootDirectory, InstanceManager manager, InstanceModel instance, DataReceivedEventHandler? outputRecieved = null)
     {
-        using MinecraftClient client = new(startInfo);
-        MinecraftVersion? minecraftVersion = client.GetMinecraftVersionByName(version);
-        if (minecraftVersion != null && minecraftVersion.HasValue)
-        {
-            client.SetMinecraftVersion(minecraftVersion.Value);
-            return client.Start(outputRecieved);
-        }
-        throw new NullReferenceException($"No minecraft version could be found with id of \"{version}\"");
-    }
-
-    /// <summary>
-    /// Launches the Minecraft client with the specified MinecraftVersion object.
-    /// </summary>
-    /// <param name="startInfo">Information required to start the Minecraft client.</param>
-    /// <param name="version">The MinecraftVersion object to launch.</param>
-    /// <param name="outputRecieved">
-    /// An optional event handler to receive the output data from the process.
-    /// </param>
-    /// <returns>The <see cref="Process"/> representing the launched Minecraft client.</returns>
-    public static Process Launch(ClientStartInfo startInfo, MinecraftVersion version, DataReceivedEventHandler? outputRecieved = null)
-    {
-        using MinecraftClient client = new(startInfo);
-        client.SetMinecraftVersion(version);
-
+        using MinecraftClient client = new(username, rootDirectory, manager, instance);
         return client.Start(outputRecieved);
     }
 
@@ -117,18 +97,6 @@ public class MinecraftClient : IDisposable
     }
 
     /// <summary>
-    /// Sets the Minecraft version to be used for launching the client.
-    /// </summary>
-    /// <param name="version">The Minecraft version to set.</param>
-    public void SetMinecraftVersion(MinecraftVersion version)
-    {
-        _clientInfo.Version = version;
-        _clientInfo.InstanceDirectory = Path.Combine(_clientInfo.ClientStartInfo.Directory, "instances", string.IsNullOrWhiteSpace(_clientInfo.ClientStartInfo.Name) ? _clientInfo.Version.ID : _clientInfo.ClientStartInfo.Name);
-    }
-
-    public void SetMinecraftVersion(string version) => SetMinecraftVersion(GetMinecraftVersionByName(version).Value);
-
-    /// <summary>
     /// Starts the Minecraft client process.
     /// </summary>
     /// <param name="outputRecieved">
@@ -145,10 +113,10 @@ public class MinecraftClient : IDisposable
         {
             StartInfo = new()
             {
-                FileName = _clientInfo.ClientStartInfo.JavaExecutable,
+                FileName = instance.Java,
                 Arguments = BuildJavaCommand(),
-                UseShellExecute = false,
-                WorkingDirectory = _clientInfo.InstanceDirectory
+                UseShellExecute = true,
+                WorkingDirectory = instance.Path
             },
             EnableRaisingEvents = true,
         };
@@ -161,64 +129,6 @@ public class MinecraftClient : IDisposable
     }
 
     /// <summary>
-    /// Asynchronously gets a MinecraftVersion object by its name.
-    /// </summary>
-    /// <param name="name">The name of the Minecraft version to retrieve.</param>
-    /// <returns>
-    /// A Task that represents the asynchronous operation. The task result contains the retrieved
-    /// MinecraftVersion object, if found; otherwise, null.
-    /// </returns>
-    public async Task<MinecraftVersion?> GetVersionByNameAsync(string name) => (await GetMinecraftVersionManifestAsync())?.Versions.First(i => i.ID == name);
-
-    /// <summary>
-    /// Gets a MinecraftVersion object by its name.
-    /// </summary>
-    /// <param name="name">The name of the Minecraft version to retrieve.</param>
-    /// <returns>The retrieved MinecraftVersion object, if found; otherwise, null.</returns>
-    public MinecraftVersion? GetMinecraftVersionByName(string name) => GetVersionByNameAsync(name).Result;
-
-    /// <summary>
-    /// Asynchronously gets the Minecraft version manifest.
-    /// </summary>
-    /// <returns>
-    /// A Task that represents the asynchronous operation. The task result contains the retrieved
-    /// MinecraftVersionManifest object, if successful; otherwise, null.
-    /// </returns>
-    public async Task<MinecraftVersionManifest?> GetMinecraftVersionManifestAsync()
-    {
-        using HttpResponseMessage response = await _client.GetAsync("https://launchermeta.mojang.com/mc/game/version_manifest.json");
-        if (response.IsSuccessStatusCode)
-        {
-            return JObject.Parse(await response.Content.ReadAsStringAsync())?.ToObject<MinecraftVersionManifest>();
-        }
-
-        return null;
-    }
-
-    /// <summary>
-    /// Asynchronously gets the latest Minecraft version from the version manifest.
-    /// </summary>
-    /// <returns>
-    /// A Task that represents the asynchronous operation. The task result contains the latest
-    /// MinecraftVersion object, if successful; otherwise, null.
-    /// </returns>
-    public async Task<MinecraftVersion?> GetLatestMinecraftVersionAsync()
-    {
-        var manifest = await GetMinecraftVersionManifestAsync();
-        if (manifest != null && manifest.HasValue)
-        {
-            return manifest.Value.Versions.FirstOrDefault(i => i.ID == manifest?.Latest.Release);
-        }
-        return null;
-    }
-
-    /// <summary>
-    /// Gets the Minecraft version manifest.
-    /// </summary>
-    /// <returns>The retrieved MinecraftVersionManifest object, if successful; otherwise, null.</returns>
-    public MinecraftVersionManifest? GetMinecraftVersionManifest() => GetMinecraftVersionManifestAsync().Result;
-
-    /// <summary>
     /// Asynchronously downloads the Minecraft libraries required for the specified version.
     /// </summary>
     /// <remarks>
@@ -227,9 +137,9 @@ public class MinecraftClient : IDisposable
     /// <returns>A Task that represents the asynchronous operation.</returns>
     public async Task DownloadLibraries()
     {
-        _clientInfo.Libraries = Directory.CreateDirectory(Path.Combine(_clientInfo.ClientStartInfo.Directory, "libraries")).FullName;
+        _clientInfo.Libraries = Directory.CreateDirectory(Path.Combine(rootDirectory, "libraries")).FullName;
 
-        using HttpResponseMessage response = await _client.GetAsync(_clientInfo.Version.URL);
+        using HttpResponseMessage response = await _client.GetAsync(instance.MinecraftVersion.URL);
 
         if (response.IsSuccessStatusCode)
         {
@@ -268,7 +178,7 @@ public class MinecraftClient : IDisposable
     {
         string? url = null;
 
-        using (HttpResponseMessage response = await _client.GetAsync(_clientInfo.Version.URL))
+        using (HttpResponseMessage response = await _client.GetAsync(instance.MinecraftVersion.URL))
         {
             if (response.IsSuccessStatusCode)
             {
@@ -279,8 +189,8 @@ public class MinecraftClient : IDisposable
         if (url != null)
         {
             progressEvent ??= (s, e) => { };
-            _clientInfo.ClientJar = Path.Combine(Directory.CreateDirectory(Path.Combine(_clientInfo.ClientStartInfo.Directory, "versions", _clientInfo.Version.ID)).FullName, "client.jar");
-            await _client.DownloadFileAsync(new(url), _clientInfo.ClientJar, progressEvent);
+            instance.ClientJar = Path.Combine(Directory.CreateDirectory(Path.Combine(rootDirectory, "versions", instance.MinecraftVersion.ID)).FullName, "client.jar");
+            await _client.DownloadFileAsync(new(url), instance.ClientJar, progressEvent);
         }
         SaveToCache();
     }
@@ -293,72 +203,12 @@ public class MinecraftClient : IDisposable
     /// </returns>
     public bool LoadFromCache()
     {
-        string cacheFile = Path.Combine(Directory.CreateDirectory(Path.Combine(_clientInfo.ClientStartInfo.Directory, "versions", _clientInfo.Version.ID)).FullName, "cache.json");
+        string cacheFile = Path.Combine(Directory.CreateDirectory(Path.Combine(rootDirectory, "versions", instance.MinecraftVersion.ID)).FullName, "cache.json");
         if (File.Exists(cacheFile))
         {
-            using (FileStream fs = new(cacheFile, FileMode.Open, FileAccess.Read, FileShare.Read))
-            {
-                using StreamReader reader = new(fs);
-                _clientInfo = JObject.Parse(reader.ReadToEnd()).ToObject<ClientInfo>() ?? _clientInfo;
-            }
-
-            if (_clientInfo != null)
-            {
-                if (Directory.Exists(_clientInfo.Assets))
-                {
-                    if (Directory.Exists(Path.Combine(_clientInfo.Assets, "objects")))
-                    {
-                        if (Directory.Exists(Path.Combine(_clientInfo.Assets, "indexes")))
-                        {
-                            if (File.Exists(Path.Combine(_clientInfo.Assets, "indexes", $"{_clientInfo.AssetIndex}.json")))
-                            {
-                                bool hasAllObjects = true;
-                                using (FileStream fs = new(Path.Combine(_clientInfo.Assets, "indexes", $"{_clientInfo.AssetIndex}.json"), FileMode.Open, FileAccess.Read, FileShare.Read))
-                                {
-                                    Dictionary<string, long> names = Directory.GetFiles(Path.Combine(_clientInfo.Assets, "objects"), "*", SearchOption.AllDirectories).ToDictionary(i => Path.GetFileName(i), i => new FileInfo(i).Length);
-                                    using StreamReader reader = new(fs);
-                                    JObject? json = JObject.Parse(reader.ReadToEnd())["objects"]?.ToObject<JObject>();
-                                    if (json != null)
-                                    {
-                                        foreach (KeyValuePair<string, JToken?> obj in json)
-                                        {
-                                            string? hash = obj.Value?["hash"]?.ToObject<string>();
-                                            long? size = obj.Value?["size"]?.ToObject<long>();
-                                            if (hash != null && size != null)
-                                            {
-                                                if (!names.ContainsKey(hash))
-                                                {
-                                                    hasAllObjects = false;
-                                                    break;
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                                if (hasAllObjects)
-                                {
-                                    if (Directory.Exists(_clientInfo.Libraries))
-                                    {
-                                        if (_clientInfo.LibraryFiles.Any())
-                                        {
-                                            foreach (DownloadArtifact file in _clientInfo.LibraryFiles)
-                                            {
-                                                if (!File.Exists(Path.Combine(_clientInfo.Libraries, file.Downloads.Artifact.Path)))
-                                                {
-                                                    return false;
-                                                }
-                                            }
-                                            return true;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+            _clientInfo = JObject.Parse(File.ReadAllText(cacheFile)).ToObject<ClientInfo>() ?? _clientInfo;
         }
-        return false;
+        return ValidateAssets() && ValidateLibraries();
     }
 
     /// <summary>
@@ -368,16 +218,15 @@ public class MinecraftClient : IDisposable
     /// Assets will be saved in an "assets" directory under the specified ClientStartInfo's directory.
     /// </remarks>
     /// <returns>A Task that represents the asynchronous operation.</returns>
-
     public async Task DownloadAssets()
     {
-        string assetsBasePath = Directory.CreateDirectory(Path.Combine(_clientInfo.ClientStartInfo.Directory, "assets")).FullName;
+        string assetsBasePath = Directory.CreateDirectory(Path.Combine(rootDirectory, "assets")).FullName;
         string indexesPath = Directory.CreateDirectory(Path.Combine(assetsBasePath, "indexes")).FullName;
         string resourcesBaseUrl = "https://resources.download.minecraft.net/";
 
         string url = "";
         string index = "";
-        using (HttpResponseMessage response = await _client.GetAsync(_clientInfo.Version.URL))
+        using (HttpResponseMessage response = await _client.GetAsync(instance.MinecraftVersion.URL))
         {
             if (response.IsSuccessStatusCode)
             {
@@ -431,6 +280,56 @@ public class MinecraftClient : IDisposable
         _client.Dispose();
     }
 
+    private bool ValidateLibraries()
+    {
+        if (Directory.Exists(_clientInfo.Libraries))
+        {
+            if (_clientInfo.LibraryFiles.Any())
+            {
+                foreach (DownloadArtifact file in _clientInfo.LibraryFiles)
+                {
+                    if (!File.Exists(Path.Combine(_clientInfo.Libraries, file.Downloads.Artifact.Path)))
+                    {
+                        return false;
+                    }
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private bool ValidateAssets()
+    {
+        if (Directory.Exists(_clientInfo.Assets) && Directory.Exists(Path.Combine(_clientInfo.Assets, "objects")) && Directory.Exists(Path.Combine(_clientInfo.Assets, "indexes")) && File.Exists(Path.Combine(_clientInfo.Assets, "indexes", $"{_clientInfo.AssetIndex}.json")))
+        {
+            Dictionary<string, long> names = Directory.GetFiles(Path.Combine(_clientInfo.Assets, "objects"), "*", SearchOption.AllDirectories).ToDictionary(i => Path.GetFileName(i), i => new FileInfo(i).Length);
+            JObject? json = JObject.Parse(File.ReadAllText(Path.Combine(_clientInfo.Assets, "indexes", $"{_clientInfo.AssetIndex}.json")))["objects"]?.ToObject<JObject>();
+            if (json != null)
+            {
+                bool hasAllObjects = true;
+                foreach (KeyValuePair<string, JToken?> obj in json)
+                {
+                    string? hash = obj.Value?["hash"]?.ToObject<string>();
+                    long? size = obj.Value?["size"]?.ToObject<long>();
+                    if (hash != null && size != null)
+                    {
+                        if (!names.ContainsKey(hash))
+                        {
+                            hasAllObjects = false;
+                            break;
+                        }
+                    }
+                }
+                if (hasAllObjects)
+                {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     /// <summary>
     /// Builds the Java command required to start the Minecraft client process.
     /// </summary>
@@ -439,10 +338,11 @@ public class MinecraftClient : IDisposable
     {
         string cmd = "";
         string classPaths = string.Join(';', Directory.GetFiles(_clientInfo.Libraries, "*.jar", SearchOption.AllDirectories));
+        instance = manager.Load(instance.Id) ?? instance;
         try
         {
-            string natives = Path.Combine(_clientInfo.ClientStartInfo.Directory, "natives", _clientInfo.Version.ID);
-            cmd = $"-XX:HeapDumpPath=MojangTricksIntelDriversForPerformance_javaw.exe_minecraft.exe.heapdump -Xss1M -Djava.library.path=\"{natives}\" -Djna.tmpdir=\"{natives}\" -Dorg.lwjgl.system.SharedLibraryExtractPath=\"{natives}\" -Dio.netty.native.workdir=\"{natives}\" -Dminecraft.launcher.brand={_clientInfo.ClientName} -Dminecraft.launcher.version={_clientInfo.ClientVersion} -cp \"{classPaths};{_clientInfo.ClientJar}\" net.minecraft.client.main.Main --username {Username} --version {_clientInfo.Version.ID} --gameDir \"{_clientInfo.InstanceDirectory}\" --assetsDir \"{_clientInfo.Assets}\" --assetIndex {_clientInfo.AssetIndex} --accessToken {_clientInfo.AuthenticationToken} --clientId {_clientInfo.ClientID}";
+            string natives = Directory.CreateDirectory(Path.Combine(rootDirectory, "natives", instance.MinecraftVersion.ID)).FullName;
+            cmd = $"-XX:HeapDumpPath=MojangTricksIntelDriversForPerformance_javaw.exe_minecraft.exe.heapdump -Xss1M -Djava.library.path=\"{natives}\" -Djna.tmpdir=\"{natives}\" -Dorg.lwjgl.system.SharedLibraryExtractPath=\"{natives}\" -Dio.netty.native.workdir=\"{natives}\" -Dminecraft.launcher.brand={_clientInfo.ClientName} -Dminecraft.launcher.version={_clientInfo.ClientVersion} -cp \"{classPaths};{instance.ClientJar}\" -Dlog4j.configurationFile=\"D:\\Workspaces\\Visual Studio Workspace\\C#\\Class Library\\Minecraft.NET\\Test\\bin\\Debug\\net7.0\\minecraft\\client-1.12.xml\" net.minecraft.client.main.Main --username {Username} --version {instance.MinecraftVersion.ID} --gameDir \"{instance.Path}\" --assetsDir \"{_clientInfo.Assets}\" --assetIndex {_clientInfo.AssetIndex} --accessToken {_clientInfo.AuthenticationToken} --clientId {_clientInfo.ClientID}";
         }
         catch (Exception e)
         {
@@ -453,9 +353,12 @@ public class MinecraftClient : IDisposable
 
     private void SaveToCache()
     {
-        string cacheFile = Path.Combine(Directory.CreateDirectory(Path.Combine(_clientInfo.ClientStartInfo.Directory, "versions", _clientInfo.Version.ID)).FullName, "cache.json");
-        using FileStream fs = new(cacheFile, FileMode.Create, FileAccess.Write, FileShare.None);
-        using StreamWriter writer = new(fs);
-        writer.Write(JsonConvert.SerializeObject(_clientInfo));
+        string cacheFile = Path.Combine(Directory.CreateDirectory(Path.Combine(rootDirectory, "versions", instance.MinecraftVersion.ID)).FullName, "cache.json");
+        using (FileStream fs = new(cacheFile, FileMode.Create, FileAccess.Write, FileShare.None))
+        {
+            using StreamWriter writer = new(fs);
+            writer.Write(JsonConvert.SerializeObject(_clientInfo));
+        }
+        manager.Save(instance.Id, instance);
     }
 }
