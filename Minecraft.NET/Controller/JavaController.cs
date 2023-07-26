@@ -13,11 +13,38 @@ using System.Runtime.InteropServices;
 
 namespace Chase.Minecraft.Controller;
 
+public struct JVMInstallations
+{
+    public string? Latest { get; set; }
+    public string? Legacy { get; set; }
+}
+
 public static class JavaController
 {
-    public static string[] GetLocalJVMInstallations() => Environment.GetEnvironmentVariable("PATH")?.Split(";")?.Where(i => i.Contains("jdk") || i.Contains("jre") || i.Contains("java")).ToArray() ?? Array.Empty<string>();
+    public static JVMInstallations GetLocalJVMInstallations(string path)
+    {
+        string latest = Path.Combine(path, "java-latest", "bin", "java.exe");
+        string legacy = Path.Combine(path, "java-legacy", "bin", "java.exe");
+        JVMInstallations installations = new()
+        {
+            Latest = null,
+            Legacy = null,
+        };
+        if (File.Exists(latest))
+        {
+            installations.Latest = latest;
+        }
+        if (File.Exists(legacy))
+        {
+            installations.Legacy = legacy;
+        }
 
-    public static async Task DownloadJava(string path, DownloadProgressEvent? javaLatestProgressEvent = null, DownloadProgressEvent? javaLegacyProgressEvent = null)
+        return installations;
+    }
+
+    public static string[] GetGlobalJVMInstallations() => Environment.GetEnvironmentVariable("PATH")?.Split(";")?.Where(i => i.Contains("jdk") || i.Contains("jre") || i.Contains("java")).ToArray() ?? Array.Empty<string>();
+
+    public static async Task DownloadJava(string path, DownloadProgressEvent? javaLatestProgressEvent = null, DownloadProgressEvent? javaLegacyProgressEvent = null, bool force = false)
     {
         path = Directory.CreateDirectory(path).FullName;
         using NetworkClient client = new();
@@ -85,18 +112,26 @@ public static class JavaController
             javaLatest = json["java-runtime-gamma"]?[0]?["manifest"]?["url"]?.ToObject<string>();
             java8 = json["jre-legacy"]?[0]?["manifest"]?["url"]?.ToObject<string>();
         }
-        Task[] tasks = new Task[2];
+        List<Task> tasks = new();
         if (javaLatest != null)
         {
-            javaLatestProgressEvent ??= (s, e) => { };
-            tasks[0] = DownloadJavaManifest(Path.Combine(path, "java-latest"), javaLatest, client, javaLatestProgressEvent);
+            string installation = Path.Combine(path, "java-latest");
+            if (!File.Exists(Path.Combine(installation, "bin", "java.exe")) || force)
+            {
+                javaLatestProgressEvent ??= (s, e) => { };
+                tasks.Add(DownloadJavaManifest(installation, javaLatest, client, javaLatestProgressEvent));
+            }
         }
         if (java8 != null)
         {
-            javaLegacyProgressEvent ??= (s, e) => { };
-            tasks[1] = DownloadJavaManifest(Path.Combine(path, "java-legacy"), java8, client, javaLegacyProgressEvent);
+            string installation = Path.Combine(path, "java-legacy");
+            if (!File.Exists(Path.Combine(installation, "bin", "java.exe")) || force)
+            {
+                javaLegacyProgressEvent ??= (s, e) => { };
+                tasks.Add(DownloadJavaManifest(installation, java8, client, javaLegacyProgressEvent));
+            }
         }
-        Task.WaitAll(tasks);
+        Task.WaitAll(tasks.ToArray());
     }
 
     private static async Task DownloadJavaManifest(string path, string manifest, NetworkClient client, DownloadProgressEvent progressEvent)
