@@ -25,6 +25,7 @@ public class InstanceManager
 
     public InstanceModel Create(InstanceModel instance)
     {
+        instance.InstanceManager = this;
         instance.Path = Directory.CreateDirectory(GetInstancePath(instance)).FullName;
         Instances.Add(instance.Id, instance);
         Save(instance.Id, instance);
@@ -33,6 +34,7 @@ public class InstanceManager
 
     public InstanceModel Save(Guid id, InstanceModel instance)
     {
+        instance.InstanceManager = this;
         instance.LastModified = DateTime.Now;
         Instances[id] = instance;
         File.WriteAllText(Path.Combine(instance.Path, "instance.json"), JsonConvert.SerializeObject(instance));
@@ -49,6 +51,7 @@ public class InstanceManager
             InstanceModel? instance = JObject.Parse(item).ToObject<InstanceModel>();
             if (instance != null)
             {
+                instance.InstanceManager = this;
                 Instances.Add(instance.Id, instance);
             }
         }
@@ -60,6 +63,7 @@ public class InstanceManager
         InstanceModel? instance = JObject.Parse(File.ReadAllText(instanceFile)).ToObject<InstanceModel>();
         if (instance != null)
         {
+            instance.InstanceManager = this;
             return Instances[id] = instance;
         }
 

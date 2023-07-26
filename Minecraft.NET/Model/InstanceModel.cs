@@ -5,6 +5,9 @@
     https://www.gnu.org/licenses/gpl-3.0.en.html#license-text
 */
 
+using Chase.Minecraft.Instances;
+using Newtonsoft.Json;
+
 namespace Chase.Minecraft.Model;
 
 public sealed class InstanceModel
@@ -24,4 +27,7 @@ public sealed class InstanceModel
     public DateTime Created { get; set; } = DateTime.Now;
     public DateTime LastModified { get; set; } = DateTime.Now;
     public string ClientJar { get; set; } = "";
+
+    [JsonIgnore]
+    public InstanceManager InstanceManager { get; set; }
 }
