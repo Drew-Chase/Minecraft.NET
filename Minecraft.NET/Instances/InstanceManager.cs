@@ -66,6 +66,15 @@ public class InstanceManager
         return null;
     }
 
+    public void AddMod(InstanceModel instance, ModModel mod)
+    {
+        List<ModModel> mods = new();
+        mods.AddRange(instance.Mods);
+        mods.Add(mod);
+        instance.Mods = mods.ToArray();
+        Save(instance.Id, instance);
+    }
+
     public string GetInstancePath(InstanceModel instance) => Path.Combine(path, instance.Id.ToString());
 
     public InstanceModel[] GetInstancesByName(string name) => Instances.Values.Where(i => i.Name == name).ToArray();
