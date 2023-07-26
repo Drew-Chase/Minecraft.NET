@@ -9,6 +9,11 @@ namespace Chase.Minecraft.Model;
 
 public struct ModLoaderModel
 {
-    public ModLoaders Modloader { get; set; }
-    public string Version { get; set; }
+    public ModLoaders Modloader { get; set; } = ModLoaders.None;
+
+    public string Version { get; set; } = "";
+
+    public ModLoaderModel()
+    {
+    }
 }
