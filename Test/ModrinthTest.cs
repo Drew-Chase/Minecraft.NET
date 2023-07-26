@@ -5,11 +5,11 @@
     https://www.gnu.org/licenses/gpl-3.0.en.html#license-text
 */
 
+using Chase.Minecraft.Instances;
 using Chase.Minecraft.Modrinth;
 using Chase.Minecraft.Modrinth.Controller;
 using Chase.Minecraft.Modrinth.Data;
 using Chase.Minecraft.Modrinth.Model;
-using System.Diagnostics;
 
 namespace Test;
 
@@ -105,7 +105,8 @@ internal class ModrinthTest
             VersionFileDetails? file = version?.Files.FirstOrDefault(i => i.Primary);
             if (file != null)
             {
-                await client.DownloadVersionFile(file.Value, Path.Combine(Directory.GetParent(Process.GetCurrentProcess().MainModule?.FileName ?? "")?.FullName ?? Environment.CurrentDirectory));
+                InstanceManager manager = new(Path.GetFullPath("./minecraft/instances"));
+                await client.DownloadVersionFile(file.Value, manager.GetFirstInstancesByName("Test"));
                 success = true;
             }
         }
