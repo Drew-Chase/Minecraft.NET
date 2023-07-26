@@ -5,6 +5,7 @@
     https://www.gnu.org/licenses/gpl-3.0.en.html#license-text
 */
 
+using Chase.Minecraft.Model;
 using Chase.Minecraft.Modrinth.Model;
 using Chase.Networking;
 using Chase.Networking.Event;
@@ -183,10 +184,10 @@ public sealed class ModrinthClient : IDisposable
     /// <param name="outputDirectory">The directory where the file will be saved.</param>
     /// <param name="downloadProgress">The event to track the download progress.</param>
     /// <returns>A Task containing the path to the downloaded file.</returns>
-    public async Task<string> DownloadVersionFile(VersionFileDetails versionFile, string outputDirectory, DownloadProgressEvent? downloadProgress = null)
+    public async Task<string> DownloadVersionFile(VersionFileDetails versionFile, InstanceModel instance, DownloadProgressEvent? downloadProgress = null)
     {
         downloadProgress ??= (s, e) => { };
-        string path = Path.Combine(outputDirectory, versionFile.Filename);
+        string path = Path.Combine(Directory.CreateDirectory(Path.Combine(instance.Path, "mods")).FullName, versionFile.Filename);
         await _client.DownloadFileAsync(new(versionFile.Url), path, downloadProgress);
         return path;
     }
