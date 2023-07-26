@@ -6,6 +6,8 @@
 */
 
 using Chase.Minecraft.Controller;
+using Chase.Minecraft.Instances;
+using Chase.Minecraft.Model;
 
 namespace Test;
 
@@ -13,11 +15,37 @@ internal static class MinecraftTest
 {
     public static async Task Start()
     {
-        using MinecraftClient client = new(new() { Directory = "./", JavaExecutable = JavaController.GetLocalJVMInstallations()[0], Username = "dcman58" }, "f8b88f7d-77d7-49ca-9b97-5bb12a4ee48f", "Better Minecraft Launcher", "0.0.1");
-        await client.AuthenticateUser();
-        client.SetMinecraftVersion("1.20.1");
-        var process = client.Start();
-        process.WaitForExit();
+        await TheFullMonty();
+    }
+
+    private static async Task TheFullMonty()
+    {
+        string javaPath = Path.GetFullPath("./java");
+        await JavaController.DownloadJava(javaPath);
+        InstanceManager manager = new(Path.GetFullPath("./minecraft/instances"));
+        InstanceModel? instance = null;
+        if (!manager.Exist("Test"))
+        {
+            MinecraftVersion? version = MinecraftVersionController.GetMinecraftVersionByName("1.20.1");
+            if (version != null)
+            {
+                instance = manager.Create(new()
+                {
+                    Name = "Test",
+                    Java = JavaController.GetLocalJVMInstallations(javaPath).Latest,
+                    MinecraftVersion = version.Value
+                });
+            }
+        }
+        else
+        {
+            instance = manager.GetFirstInstancesByName("Test");
+        }
+        if (instance != null)
+        {
+            var process = MinecraftClient.Launch("dcman58", Path.GetFullPath("./minecraft"), manager, instance);
+            process.WaitForExit();
+        }
     }
 
     private static async Task DownloadJava()
