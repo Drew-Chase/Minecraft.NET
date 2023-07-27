@@ -12,11 +12,22 @@ using Serilog;
 
 namespace Chase.Minecraft.Instances;
 
+/// <summary>
+/// Represents a manager for handling Minecraft instances.
+/// </summary>
 public class InstanceManager
 {
     private readonly string path;
+
+    /// <summary>
+    /// Gets the dictionary of instances with their unique identifiers as keys.
+    /// </summary>
     public Dictionary<Guid, InstanceModel> Instances { get; private set; }
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="InstanceManager"/> class.
+    /// </summary>
+    /// <param name="path">The path to the directory where Minecraft instances are stored.</param>
     public InstanceManager(string path)
     {
         this.path = Directory.CreateDirectory(path).FullName;
@@ -24,6 +35,13 @@ public class InstanceManager
         Load();
     }
 
+    /// <summary>
+    /// Creates a new Minecraft instance.
+    /// </summary>
+    /// <param name="instance">
+    /// The <see cref="InstanceModel"/> representing the new instance to be created.
+    /// </param>
+    /// <returns>The created <see cref="InstanceModel"/> instance.</returns>
     public InstanceModel Create(InstanceModel instance)
     {
         instance.InstanceManager = this;
@@ -33,6 +51,14 @@ public class InstanceManager
         return instance;
     }
 
+    /// <summary>
+    /// Saves changes to an existing Minecraft instance.
+    /// </summary>
+    /// <param name="id">The unique identifier of the instance to be saved.</param>
+    /// <param name="instance">
+    /// The updated <see cref="InstanceModel"/> representing the instance to be saved.
+    /// </param>
+    /// <returns>The saved <see cref="InstanceModel"/> instance.</returns>
     public InstanceModel Save(Guid id, InstanceModel instance)
     {
         Log.Debug("Saving instance to file: {PATH}", Path.Combine(instance.Path, "instance.json"));
@@ -43,6 +69,9 @@ public class InstanceManager
         return instance;
     }
 
+    /// <summary>
+    /// Loads all Minecraft instances from the specified directory.
+    /// </summary>
     public void Load()
     {
         Instances.Clear();
@@ -65,6 +94,11 @@ public class InstanceManager
         }
     }
 
+    /// <summary>
+    /// Loads a Minecraft instance from the specified path.
+    /// </summary>
+    /// <param name="path">The path to the directory containing the instance data.</param>
+    /// <returns>The loaded <see cref="InstanceModel"/> instance, or null if loading failed.</returns>
     public InstanceModel? Load(string path)
     {
         string instanceFile = Path.Combine(path, "instance.json");
@@ -78,6 +112,13 @@ public class InstanceManager
         return null;
     }
 
+    /// <summary>
+    /// Adds a mod to a Minecraft instance.
+    /// </summary>
+    /// <param name="instance">
+    /// The <see cref="InstanceModel"/> representing the instance to which the mod will be added.
+    /// </param>
+    /// <param name="mod">The <see cref="ModModel"/> representing the mod to be added.</param>
     public void AddMod(InstanceModel instance, ModModel mod)
     {
         List<ModModel> mods = new();
@@ -87,12 +128,32 @@ public class InstanceManager
         Save(instance.Id, instance);
     }
 
+    /// <summary>
+    /// Retrieves all instances with a specified name.
+    /// </summary>
+    /// <param name="name">The name of the instances to retrieve.</param>
+    /// <returns>An array of <see cref="InstanceModel"/> instances with the specified name.</returns>
     public InstanceModel[] GetInstancesByName(string name) => Instances.Values.Where(i => i.Name == name).ToArray();
 
+    /// <summary>
+    /// Retrieves the first instance with a specified name.
+    /// </summary>
+    /// <param name="name">The name of the instance to retrieve.</param>
+    /// <returns>The <see cref="InstanceModel"/> instance with the specified name.</returns>
     public InstanceModel GetFirstInstancesByName(string name) => Instances.Values.First(i => i.Name == name);
 
+    /// <summary>
+    /// Retrieves a specific instance by its unique identifier.
+    /// </summary>
+    /// <param name="id">The unique identifier of the instance to retrieve.</param>
+    /// <returns>The <see cref="InstanceModel"/> instance with the specified unique identifier.</returns>
     public InstanceModel GetInstanceById(Guid id) => Instances[id];
 
+    /// <summary>
+    /// Checks if an instance with the specified name exists.
+    /// </summary>
+    /// <param name="name">The name of the instance to check.</param>
+    /// <returns>True if an instance with the specified name exists; otherwise, false.</returns>
     public bool Exist(string name) => Instances.Values.Any(i => i.Name == name);
 
     private string GetUniqueInstanceDirectoryName(string name)
