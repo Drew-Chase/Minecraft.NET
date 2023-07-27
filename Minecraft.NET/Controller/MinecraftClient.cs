@@ -137,7 +137,7 @@ public class MinecraftClient : IDisposable
     /// <returns>A Task that represents the asynchronous operation.</returns>
     public async Task DownloadLibraries()
     {
-        _clientInfo.Libraries = Directory.CreateDirectory(Path.Combine(rootDirectory, "libraries")).FullName;
+        _clientInfo.LibrariesPath = Directory.CreateDirectory(Path.Combine(rootDirectory, "libraries")).FullName;
 
         using HttpResponseMessage response = await _client.GetAsync(instance.MinecraftVersion.URL);
 
@@ -147,7 +147,7 @@ public class MinecraftClient : IDisposable
             List<Task> tasks = new();
             foreach (DownloadArtifact artifact in _clientInfo.LibraryFiles)
             {
-                string absolutePath = Path.Combine(_clientInfo.Libraries, artifact.Downloads.Artifact.Path);
+                string absolutePath = Path.Combine(_clientInfo.LibrariesPath, artifact.Downloads.Artifact.Path);
                 string filename = absolutePath.Split('/').Last();
                 await Console.Out.WriteLineAsync($"Downloading '{artifact.Downloads.Artifact.Path}'");
                 string directory = Directory.CreateDirectory(Directory.GetParent(absolutePath)?.FullName ?? "").FullName;
@@ -282,13 +282,13 @@ public class MinecraftClient : IDisposable
 
     private bool ValidateLibraries()
     {
-        if (Directory.Exists(_clientInfo.Libraries))
+        if (Directory.Exists(_clientInfo.LibrariesPath))
         {
             if (_clientInfo.LibraryFiles.Any())
             {
                 foreach (DownloadArtifact file in _clientInfo.LibraryFiles)
                 {
-                    if (!File.Exists(Path.Combine(_clientInfo.Libraries, file.Downloads.Artifact.Path)))
+                    if (!File.Exists(Path.Combine(_clientInfo.LibrariesPath, file.Downloads.Artifact.Path)))
                     {
                         return false;
                     }
@@ -337,19 +337,22 @@ public class MinecraftClient : IDisposable
     private string BuildJavaCommand()
     {
         string cmd = "";
-        string classPaths = string.Join(';', Directory.GetFiles(_clientInfo.Libraries, "*.jar", SearchOption.AllDirectories));
+        string classPaths = string.Join(';', Directory.GetFiles(_clientInfo.LibrariesPath, "*.jar", SearchOption.AllDirectories));
         instance = manager.Load(instance.Id) ?? instance;
         try
         {
             string natives = Directory.CreateDirectory(Path.Combine(rootDirectory, "natives", instance.MinecraftVersion.ID)).FullName;
+
             string jvm = $"{instance.JVMArguments} " +
+                $"-Xmx{instance.RAM.MaximumRamMB}M " +
+                $"-Xms{instance.RAM.MinimumRamMB}M " +
                 $"-XX:HeapDumpPath=MojangTricksIntelDriversForPerformance_javaw.exe_minecraft.exe.heapdump " +
                 $"-Xss1M -Djava.library.path=\"{natives}\" -Djna.tmpdir=\"{natives}\" " +
                 $"-Dorg.lwjgl.system.SharedLibraryExtractPath=\"{natives}\" " +
                 $"-Dio.netty.native.workdir=\"{natives}\" " +
                 $"-Dminecraft.launcher.brand={_clientInfo.ClientName} " +
                 $"-Dminecraft.launcher.version={_clientInfo.ClientVersion} " +
-                $"-cp \"{classPaths};{instance.ClientJar}\" ";
+                $"-cp \"{classPaths};{string.Join(";", instance.AdditionalClassPaths)};{instance.ClientJar}\" ";
 
             string minecraftArgs = $"{instance.MinecraftArguments} " +
                 $"--username {Username} " +
@@ -358,9 +361,11 @@ public class MinecraftClient : IDisposable
                 $"--assetsDir \"{_clientInfo.Assets}\" " +
                 $"--assetIndex {_clientInfo.AssetIndex} " +
                 $"--accessToken {_clientInfo.AuthenticationToken} " +
-                $"--clientId {_clientInfo.ClientID}";
+                $"--clientId {_clientInfo.ClientID} " +
+                $"--width {instance.WindowWidth} " +
+                $"--height {instance.WindowHeight}";
 
-            cmd = $"{jvm} net.minecraft.client.main.Main {minecraftArgs}";
+            cmd = $"{jvm} {instance.LaunchClassPath} {minecraftArgs}";
         }
         catch (Exception e)
         {
