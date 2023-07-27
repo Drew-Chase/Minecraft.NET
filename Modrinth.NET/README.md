@@ -6,6 +6,9 @@ The Modrinth.NET library, developed by LFInteractive LLC, provides a set of func
 ## Installation
 
 To use the Modrinth.NET library in your project, you can add it as a NuGet package using the NuGet Package Manager or the Package Manager Console in Visual Studio. The package name is `Modrinth.NET`.
+```powershell
+Install-Package Modrinth.NET
+```
 
 ## Usage
 
