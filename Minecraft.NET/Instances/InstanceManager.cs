@@ -26,7 +26,7 @@ public class InstanceManager
     public InstanceModel Create(InstanceModel instance)
     {
         instance.InstanceManager = this;
-        instance.Path = Directory.CreateDirectory(GetInstancePath(instance)).FullName;
+        instance.Path = Directory.CreateDirectory(Path.Combine(path, GetUniqueInstanceDirectoryName(instance.Name))).FullName;
         Instances.Add(instance.Id, instance);
         Save(instance.Id, instance);
         return instance;
@@ -57,14 +57,14 @@ public class InstanceManager
         }
     }
 
-    public InstanceModel? Load(Guid id)
+    public InstanceModel? Load(string path)
     {
-        string instanceFile = Path.Combine(path, id.ToString(), "instance.json");
+        string instanceFile = Path.Combine(path, "instance.json");
         InstanceModel? instance = JObject.Parse(File.ReadAllText(instanceFile)).ToObject<InstanceModel>();
         if (instance != null)
         {
             instance.InstanceManager = this;
-            return Instances[id] = instance;
+            return Instances[instance.Id] = instance;
         }
 
         return null;
@@ -79,8 +79,6 @@ public class InstanceManager
         Save(instance.Id, instance);
     }
 
-    public string GetInstancePath(InstanceModel instance) => Path.Combine(path, instance.Id.ToString());
-
     public InstanceModel[] GetInstancesByName(string name) => Instances.Values.Where(i => i.Name == name).ToArray();
 
     public InstanceModel GetFirstInstancesByName(string name) => Instances.Values.First(i => i.Name == name);
@@ -88,4 +86,26 @@ public class InstanceManager
     public InstanceModel GetInstanceById(string name) => Instances.Values.First(i => i.Name == name);
 
     public bool Exist(string name) => Instances.Values.Any(i => i.Name == name);
+
+    private string GetUniqueInstanceDirectoryName(string name)
+    {
+        string dirname = name;
+
+        foreach (char illegal in Path.GetInvalidFileNameChars())
+        {
+            dirname = dirname.Replace(illegal, '-');
+        }
+
+        string[] dirs = Directory.GetFileSystemEntries(path, "*", SearchOption.TopDirectoryOnly);
+        int index = 0;
+        string originalDirname = dirname;
+
+        while (Array.Exists(dirs, dir => dir.Equals(Path.Combine(path, dirname), StringComparison.OrdinalIgnoreCase)))
+        {
+            index++;
+            dirname = $"{originalDirname} ({index})";
+        }
+
+        return dirname;
+    }
 }
