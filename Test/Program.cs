@@ -5,6 +5,8 @@
     https://www.gnu.org/licenses/gpl-3.0.en.html#license-text
 */
 
+using Chase.Minecraft;
+using Serilog;
 using System.Diagnostics;
 
 namespace Test;
@@ -13,9 +15,10 @@ internal class Program
 {
     private static async Task Main()
     {
+        MinecraftInstance.Initialize();
         Console.Write("Test What?\n0 = Modrinth\n1 = CurseForge\n2 = Minecraft\nIndex: ");
         var watch = Stopwatch.StartNew();
-        string input = Console.ReadLine();
+        string input = Console.ReadLine() ?? "";
         switch (input)
         {
             case "0":
@@ -30,7 +33,7 @@ internal class Program
                 await MinecraftTest.Start();
                 break;
         }
-        await Console.Out.WriteLineAsync($"Process took: {watch.Elapsed}");
-        Console.ReadLine();
+        Log.Debug($"Process took: {watch.Elapsed}");
+        //Console.ReadLine();
     }
 }

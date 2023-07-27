@@ -6,9 +6,9 @@
 */
 
 using Chase.Minecraft.Controller;
-using Chase.Minecraft.Fabric;
 using Chase.Minecraft.Instances;
 using Chase.Minecraft.Model;
+using Serilog;
 
 namespace Test;
 
@@ -45,17 +45,26 @@ internal static class MinecraftTest
         }
         if (instance != null)
         {
+            //string[] loader = await ForgeLoader.GetLoaderVersions("1.20.1");
+            //await ForgeLoader.Install(loader.First(), instance);
             MinecraftClient client = new("dcman58", Path.GetFullPath("./minecraft"), instance);
             client.SetClientInfo("f8b88f7d-77d7-49ca-9b97-5bb12a4ee48f", "PolygonMC", "0.0.0");
             await client.AuthenticateUser();
 
-            if (instance.ModLoader.Modloader != Chase.Minecraft.ModLoaders.Fabric)
-            {
-                string[] loaderVersions = await FabricLoader.GetLoaderVersions();
-                await FabricLoader.Install(loaderVersions.First(), instance);
-            }
+            //if (instance.ModLoader.Modloader != Chase.Minecraft.ModLoaders.Fabric)
+            //{
+            //    string[] loaderVersions = await FabricLoader.GetLoaderVersions();
+            //    await FabricLoader.Install(loaderVersions.First(), instance);
+            //}
 
-            var process = client.Start();
+            var process = client.Start((s, e) =>
+            {
+                string? data = e.Data;
+                if (data != null)
+                {
+                    Console.WriteLine(data);
+                }
+            });
             process.WaitForExit();
         }
     }

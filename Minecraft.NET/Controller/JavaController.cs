@@ -9,6 +9,7 @@ using Chase.Minecraft.Exceptions;
 using Chase.Networking;
 using Chase.Networking.Event;
 using Newtonsoft.Json.Linq;
+using Serilog;
 using System.Runtime.InteropServices;
 
 namespace Chase.Minecraft.Controller;
@@ -157,7 +158,7 @@ public static class JavaController
                 {
                     try
                     {
-                        await Console.Out.WriteLineAsync($"Downloading {item.Name}");
+                        Log.Debug($"Downloading {item.Name}");
                         tasks.Add(client.DownloadFileAsync(new(url), filepath, progressEvent));
                     }
                     catch { }

@@ -10,6 +10,7 @@ using Chase.Minecraft.Modrinth;
 using Chase.Minecraft.Modrinth.Controller;
 using Chase.Minecraft.Modrinth.Data;
 using Chase.Minecraft.Modrinth.Model;
+using Serilog;
 
 namespace Test;
 
@@ -47,7 +48,7 @@ internal class ModrinthTest
         Console.ForegroundColor = results == null ? ConsoleColor.Red : ConsoleColor.Green;
         Console.Write($"[{(results == null ? "FAIL" : "SUCCESS")}]");
         Console.ResetColor();
-        Console.WriteLine($" Modrinth Search!");
+        Log.Debug($" Modrinth Search!");
     }
 
     private static async Task GetModrinthProject(ModrinthClient client)
@@ -56,7 +57,7 @@ internal class ModrinthTest
         Console.ForegroundColor = project == null ? ConsoleColor.Red : ConsoleColor.Green;
         Console.Write($"[{(project == null ? "FAIL" : "SUCCESS")}]");
         Console.ResetColor();
-        Console.WriteLine($" Get Modrinth Project!");
+        Log.Debug($" Get Modrinth Project!");
     }
 
     private static async Task GetModrinthProjectDependencies(ModrinthClient client)
@@ -65,7 +66,7 @@ internal class ModrinthTest
         Console.ForegroundColor = dependencies == null ? ConsoleColor.Red : ConsoleColor.Green;
         Console.Write($"[{(dependencies == null ? "FAIL" : "SUCCESS")}]");
         Console.ResetColor();
-        Console.WriteLine($" Get Modrinth Project Dependencies!");
+        Log.Debug($" Get Modrinth Project Dependencies!");
     }
 
     private static async Task GetModrinthUser(ModrinthClient client)
@@ -74,7 +75,7 @@ internal class ModrinthTest
         Console.ForegroundColor = user == null ? ConsoleColor.Red : ConsoleColor.Green;
         Console.Write($"[{(user == null ? "FAIL" : "SUCCESS")}]");
         Console.ResetColor();
-        Console.WriteLine($" Get Modrinth User!");
+        Log.Debug($" Get Modrinth User!");
     }
 
     private static async Task GetProjectVersions(ModrinthClient client)
@@ -83,7 +84,7 @@ internal class ModrinthTest
         Console.ForegroundColor = versions == null ? ConsoleColor.Red : ConsoleColor.Green;
         Console.Write($"[{(versions == null ? "FAIL" : "SUCCESS")}]");
         Console.ResetColor();
-        Console.WriteLine($" Get Project Versions!");
+        Log.Debug($" Get Project Versions!");
     }
 
     private static async Task GetCategories(ModrinthClient client)
@@ -92,7 +93,7 @@ internal class ModrinthTest
         Console.ForegroundColor = categories == null ? ConsoleColor.Red : ConsoleColor.Green;
         Console.Write($"[{(categories == null ? "FAIL" : "SUCCESS")}]");
         Console.ResetColor();
-        Console.WriteLine($" Get Categories!");
+        Log.Debug($" Get Categories!");
     }
 
     private static async Task DownloadVersionFile(ModrinthClient client)
@@ -113,6 +114,6 @@ internal class ModrinthTest
         Console.ForegroundColor = !success ? ConsoleColor.Red : ConsoleColor.Green;
         Console.Write($"[{(!success ? "FAIL" : "SUCCESS")}]");
         Console.ResetColor();
-        Console.WriteLine($" Get Project Version File!");
+        Log.Debug($" Get Project Version File!");
     }
 }

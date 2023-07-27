@@ -8,6 +8,7 @@
 using Chase.Minecraft.Model;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Serilog;
 
 namespace Chase.Minecraft.Instances;
 
@@ -34,6 +35,7 @@ public class InstanceManager
 
     public InstanceModel Save(Guid id, InstanceModel instance)
     {
+        Log.Debug("Saving instance to file: {PATH}", Path.Combine(instance.Path, "instance.json"));
         instance.InstanceManager = this;
         instance.LastModified = DateTime.Now;
         Instances[id] = instance;
@@ -47,12 +49,18 @@ public class InstanceManager
         string[] json = Directory.GetFiles(path, "instance.json", SearchOption.AllDirectories);
         foreach (string file in json)
         {
+            Log.Debug("Attempting to load instance from file: {PATH}", file);
             string item = File.ReadAllText(file);
             InstanceModel? instance = JObject.Parse(item).ToObject<InstanceModel>();
             if (instance != null)
             {
+                Log.Debug("Successfully loaded instance from file: {PATH}", file);
                 instance.InstanceManager = this;
                 Instances.Add(instance.Id, instance);
+            }
+            else
+            {
+                Log.Error("Failed to load instance file: {PATH}", file);
             }
         }
     }

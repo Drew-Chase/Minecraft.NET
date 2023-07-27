@@ -6,6 +6,7 @@
 */
 
 using Chase.Minecraft.Curseforge.Controller;
+using Serilog;
 
 namespace Test;
 
@@ -26,7 +27,7 @@ internal static class CurseforgeTest
         Console.ForegroundColor = project == null ? ConsoleColor.Red : ConsoleColor.Green;
         Console.Write($"[{(project == null ? "FAIL" : "SUCCESS")}]");
         Console.ResetColor();
-        Console.WriteLine($" Search Curseforge Mod!");
+        Log.Debug($" Search Curseforge Mod!");
     }
 
     private static async Task SearchModpack(CurseforgeClient client)
@@ -35,7 +36,7 @@ internal static class CurseforgeTest
         Console.ForegroundColor = project == null ? ConsoleColor.Red : ConsoleColor.Green;
         Console.Write($"[{(project == null ? "FAIL" : "SUCCESS")}]");
         Console.ResetColor();
-        Console.WriteLine($" Search Curseforge Modpack!");
+        Log.Debug($" Search Curseforge Modpack!");
     }
 
     private static async Task SearchResourcepack(CurseforgeClient client)
@@ -44,7 +45,7 @@ internal static class CurseforgeTest
         Console.ForegroundColor = project == null ? ConsoleColor.Red : ConsoleColor.Green;
         Console.Write($"[{(project == null ? "FAIL" : "SUCCESS")}]");
         Console.ResetColor();
-        Console.WriteLine($" Search Curseforge Resourcepacks!");
+        Log.Debug($" Search Curseforge Resourcepacks!");
     }
 
     private static async Task SearchWorlds(CurseforgeClient client)
@@ -53,6 +54,6 @@ internal static class CurseforgeTest
         Console.ForegroundColor = project == null ? ConsoleColor.Red : ConsoleColor.Green;
         Console.Write($"[{(project == null ? "FAIL" : "SUCCESS")}]");
         Console.ResetColor();
-        Console.WriteLine($" Search Curseforge World!");
+        Log.Debug($" Search Curseforge World!");
     }
 }
