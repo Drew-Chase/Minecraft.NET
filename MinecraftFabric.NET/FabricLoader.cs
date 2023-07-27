@@ -32,27 +32,24 @@ public static class FabricLoader
     {
         using NetworkClient client = new();
 
+        string librariesDirectory = Path.Combine(instance.Path, "libraries");
+
+        if (Directory.Exists(librariesDirectory))
+        {
+            Directory.Delete(librariesDirectory, true);
+        }
+
         string? latestInstallerVersion = await GetLatestInstallerVersion(client);
         if (latestInstallerVersion != null)
         {
             string temp = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
-            await client.DownloadFileAsync(new($"{MavenURL}{MavenInstallerPath}{latestInstallerVersion}/fabric-installer-{latestInstallerVersion}.jar"), temp, (s, e) => { });
+            Uri url = new($"{MavenURL}{MavenInstallerPath}{latestInstallerVersion}/fabric-installer-{latestInstallerVersion}.jar");
+            await client.DownloadFileAsync(url, temp, (s, e) => { });
             instance.ModLoader = new()
             {
                 Modloader = ModLoaders.Fabric,
-                Version = version
+                Version = version,
             };
-            instance.LaunchClassPath = "\"-DFabricMcEmu= net.minecraft.client.main.Main\" net.fabricmc.loader.impl.launch.knot.KnotClient";
-            List<string> additionalPaths = instance.AdditionalClassPaths.ToList();
-            foreach (string file in Directory.GetFiles(Path.Combine(instance.Path, "libraries"), "*.jar", SearchOption.AllDirectories))
-            {
-                if (!additionalPaths.Contains(file))
-                {
-                    additionalPaths.Add(file);
-                }
-            }
-            instance.AdditionalClassPaths = additionalPaths.ToArray();
-            instance.InstanceManager.Save(instance.Id, instance);
             await Task.Run(() =>
             {
                 Process.Start(new ProcessStartInfo()
@@ -63,6 +60,17 @@ public static class FabricLoader
                     CreateNoWindow = true,
                 })?.WaitForExit();
             });
+            instance.LaunchClassPath = "\"-DFabricMcEmu= net.minecraft.client.main.Main\" net.fabricmc.loader.impl.launch.knot.KnotClient";
+            List<string> additionalPaths = instance.AdditionalClassPaths.ToList();
+            foreach (string file in Directory.GetFiles(Directory.CreateDirectory(librariesDirectory).FullName, "*.jar", SearchOption.AllDirectories))
+            {
+                if (!additionalPaths.Contains(file))
+                {
+                    additionalPaths.Add(file);
+                }
+            }
+            instance.AdditionalClassPaths = additionalPaths.ToArray();
+            instance.InstanceManager.Save(instance.Id, instance);
         }
         else
         {
