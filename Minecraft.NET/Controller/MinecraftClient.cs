@@ -29,11 +29,14 @@ public class MinecraftClient : IDisposable
     private readonly string rootDirectory;
     private InstanceModel instance;
     private ClientInfo _clientInfo;
-    private bool isAuthenticated = false;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MinecraftClient"/> class.
     /// </summary>
+    /// <param name="username">The players username</param>
+    /// <param name="rootDirectory">
+    /// The directory where all assets and library directories will be created
+    /// </param>
     /// <param name="instance">Information required to start the Minecraft client.</param>
     public MinecraftClient(string username, string rootDirectory, InstanceModel instance)
     {
@@ -45,6 +48,24 @@ public class MinecraftClient : IDisposable
         this.rootDirectory = Directory.CreateDirectory(rootDirectory).FullName;
     }
 
+    /// <summary>
+    /// Launches the Minecraft client with the specified version.
+    /// </summary>
+    /// <param name="username">the players username</param>
+    /// <param name="rootDirectory">
+    /// The directory where all assets and library directories will be created
+    /// </param>
+    /// <param name="instance">Information required to start the Minecraft client.</param>
+    /// <param name="clientId">
+    /// The azure client id from <a
+    /// href="https://portal.azure.com/#view/Microsoft_AAD_IAM/ActiveDirectoryMenuBlade/~/RegisteredApps">Azure Portal</a>
+    /// </param>
+    /// <param name="clientName">
+    /// The azure client name from <a
+    /// href="https://portal.azure.com/#view/Microsoft_AAD_IAM/ActiveDirectoryMenuBlade/~/RegisteredApps">Azure Portal</a>
+    /// </param>
+    /// <param name="clientVersion">The client version</param>
+    /// <returns>The <see cref="Process"/> representing the launched Minecraft client.</returns>
     public MinecraftClient(string username, string rootDirectory, InstanceModel instance, string clientId, string clientName, string clientVersion) : this(username, rootDirectory, instance)
     {
         SetClientInfo(clientId, clientName, clientVersion);
@@ -53,8 +74,11 @@ public class MinecraftClient : IDisposable
     /// <summary>
     /// Launches the Minecraft client with the specified version.
     /// </summary>
+    /// <param name="username">the players username</param>
+    /// <param name="rootDirectory">
+    /// The directory where all assets and library directories will be created
+    /// </param>
     /// <param name="instance">Information required to start the Minecraft client.</param>
-    /// <param name="version">The Minecraft version to launch.</param>
     /// <param name="outputRecieved">
     /// An optional event handler to receive the output data from the process.
     /// </param>
@@ -81,6 +105,11 @@ public class MinecraftClient : IDisposable
         _clientInfo.ClientVersion = clientVersion;
     }
 
+    /// <summary>
+    /// This authenticates the user using the client's info provided by the <seealso
+    /// cref="SetClientInfo(string, string, string)">SetClientInfo</seealso>
+    /// </summary>
+    /// <returns>If the user was successfully authenticated.</returns>
     public async Task<bool> AuthenticateUser()
     {
         if (!string.IsNullOrWhiteSpace(_clientInfo.ClientID))
@@ -91,12 +120,10 @@ public class MinecraftClient : IDisposable
             {
                 Log.Debug("Authenticated user!");
                 _clientInfo.AuthenticationToken = token;
-                isAuthenticated = true;
                 return true;
             }
         }
         Log.Warning("Failed to authenticate user");
-        isAuthenticated = false;
         return false;
     }
 

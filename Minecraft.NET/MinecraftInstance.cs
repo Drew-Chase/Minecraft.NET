@@ -9,8 +9,14 @@ using Serilog;
 
 namespace Chase.Minecraft;
 
+/// <summary>
+/// Minecraft.NET instance
+/// </summary>
 public static class MinecraftInstance
 {
+    /// <summary>
+    /// Initializes the Minecraft.NET components.
+    /// </summary>
     public static void Initialize()
     {
         Log.Logger = new LoggerConfiguration()
