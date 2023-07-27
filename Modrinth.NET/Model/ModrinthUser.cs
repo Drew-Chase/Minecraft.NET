@@ -9,7 +9,7 @@ using Newtonsoft.Json;
 
 namespace Chase.Minecraft.Modrinth.Model;
 
-public struct ModrinthUser
+public sealed class ModrinthUser
 {
     [JsonProperty("username")]
     public string Username { get; set; }
@@ -43,6 +43,9 @@ public struct ModrinthUser
 
     [JsonProperty("badges")]
     public int Badges { get; set; }
+
+    [JsonProperty("projects")]
+    public ModrinthProject[] Projects { get; set; }
 }
 
 public struct PayoutData

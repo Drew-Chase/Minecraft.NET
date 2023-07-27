@@ -139,7 +139,12 @@ public sealed class ModrinthClient : IDisposable
         HttpResponseMessage response = await _client.GetAsync($"{BASE_URL}user/{id}");
         if (response.IsSuccessStatusCode)
         {
-            return JObject.Parse(await response.Content.ReadAsStringAsync()).ToObject<ModrinthUser>();
+            ModrinthUser? user = JObject.Parse(await response.Content.ReadAsStringAsync()).ToObject<ModrinthUser>();
+            if (user != null)
+            {
+                user.Projects = (await _client.GetAsJsonArray($"{BASE_URL}user/{id}/projects"))?.ToObject<ModrinthProject[]>() ?? Array.Empty<ModrinthProject>();
+                return user;
+            }
         }
         return null;
     }
