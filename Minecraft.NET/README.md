@@ -1,4 +1,4 @@
-![](Icons/Minecraft.jpg)
+![](/Icons/Minecraft.jpg)
 # Minecraft Client Documentation
 
 ## Introduction
@@ -63,6 +63,25 @@ InstanceModel[] instances = manager.GetInstancesByName("Test");
 
 // Get the instance based on the unique GUID.
 instance = manager.GetInstanceById(instance.Id);
+```
+
+### Minecraft Versions
+
+### List Minecraft Versions
+```csharp
+MinecraftVersionManifest minecraftVersionManifest = MinecraftVersionController.GetMinecraftVersionManifest().Value; // Gets a minecraft version manifest from mojang
+MinecraftVersion[] versions = minecraftVersionManifest.Versions; // Gets a list of all minecraft versions, releases and snapshots
+
+string latestSnapshot = minecraftVersionManifest.Latest.Snapshot; // The latest Minecraft Snapshot Version as a string
+string latestMinecraftVerson = minecraftVersionManifest.Latest.Release; // The latest Minecraft Version as a string
+
+```
+### Sets the Instance Minecraft Version
+```csharp
+MinecraftVersion latestVersion = MinecraftVersionController.GetMinecraftVersionByName(latestMinecraftVerson).Value; // Creates a MinecraftVersion object based on the version string
+instance.MinecraftVersion = latestVersion; // This sets the minecraft version to the latest
+manager.Save(instance.Id, instance); // This saves the instance to file
+instance.InstanceManager.Save(instance.Id, instance); // This gets the instance manager from the instance and saves it to file.
 ```
 
 ### Creating a Minecraft Client
