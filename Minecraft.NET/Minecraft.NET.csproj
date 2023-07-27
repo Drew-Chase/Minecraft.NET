@@ -5,7 +5,41 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>Chase.Minecraft</RootNamespace>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <Title>Minecraft.NET</Title>
+    <Version>0.0.1</Version>
+    <Company>LFInteractive</Company>
+    <Authors>Drew Chase</Authors>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/DcmanProductions/Minecraft.NET</RepositoryUrl>
+    <Description>A library minecraft.</Description>
+    <PackageTags>minecraft;networking;utilities;gaming;xbox</PackageTags>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <IncludeSymbols>True</IncludeSymbols>
+    <SignAssembly>False</SignAssembly>
+    <GenerateDocumentationFile>True</GenerateDocumentationFile>
+    <PackageIcon>Minecraft.jpg</PackageIcon>
+    <ApplicationIcon>Minecraft.ico</ApplicationIcon>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="Minecraft.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\Icons\Minecraft.jpg">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Include="..\LICENSE">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Include="..\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Chase.Networking" Version="0.0.3" />
