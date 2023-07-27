@@ -6,23 +6,60 @@
 */
 
 using Chase.Minecraft.Data;
+using Chase.Minecraft.Forge.Model;
 using Chase.Minecraft.Model;
 using Chase.Networking;
 using HtmlAgilityPack;
+using Newtonsoft.Json;
+using System.IO.Compression;
 
 namespace Chase.Minecraft.Forge;
 
 public static class ForgeLoader
 {
-    public static async Task Install(string version, InstanceModel instance)
+    public static async Task Install(string loader_version, InstanceModel instance)
     {
         using NetworkClient client = new();
+        string installerPath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+        Uri url = new($"https://maven.minecraftforge.net/net/minecraftforge/forge/{instance.MinecraftVersion.ID}-{loader_version}/forge-{instance.MinecraftVersion.ID}-{loader_version}-installer.jar");
+        await client.DownloadFileAsync(url, installerPath, (_, _) => { });
+
+        string jsonFileName = "version.json";
+        ForgeVersionInfo info = new();
+        using (var archive = ZipFile.OpenRead(installerPath))
+        {
+            foreach (var entry in archive.Entries)
+            {
+                if (entry.FullName.Equals(jsonFileName, StringComparison.OrdinalIgnoreCase))
+                {
+                    using var stream = entry.Open();
+                    using var reader = new StreamReader(stream);
+                    string jsonContent = reader.ReadToEnd();
+                    info = JsonConvert.DeserializeObject<ForgeVersionInfo>(jsonContent);
+                }
+            }
+        }
+        if (!string.IsNullOrWhiteSpace(info.Id))
+        {
+            instance.MinecraftArguments = info.Arguments.Game;
+            instance.JVMArguments = info.Arguments.Jvm.Select(i => i.Replace("${library_directory}", Path.Combine(instance.Path, "libraries")).Replace("${classpath_separator}", ";").Replace("${version_name}", info.Id)).ToArray();
+
+            List<Task> tasks = new();
+            foreach (ForgeLibrary libraryItem in info.Libraries)
+            {
+                ForgeArtifact artifact = libraryItem.Downloads.Artifact;
+                Uri artifactUri = artifact.Url;
+                string artifactPath = Path.Combine(Path.Combine(instance.Path, "libraries"), artifact.Path);
+                tasks.Add(client.DownloadFileAsync(artifactUri, artifactPath, (_, _) => { }));
+            }
+            Task.WaitAll(tasks.ToArray());
+        }
     }
 
-    public static async Task<string[]> GetLoaderVersions(string version)
+    public static async Task<string[]> GetLoaderVersions(string minecraft_version)
     {
         using NetworkClient client = new();
-        using HttpResponseMessage response = await client.GetAsync($"https://files.minecraftforge.net/net/minecraftforge/forge/index_{version}.html");
+        using HttpResponseMessage response = await client.GetAsync($"https://files.minecraftforge.net/net/minecraftforge/forge/index_{minecraft_version}.html");
         if (response.IsSuccessStatusCode)
         {
             string content = await response.Content.ReadAsStringAsync();
