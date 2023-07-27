@@ -19,9 +19,9 @@ using System.Web;
 
 namespace Chase.Minecraft.Authentication;
 
-public class MicrosoftAuthentication : IDisposable
+internal class MicrosoftAuthentication : IDisposable
 {
-    private const string redirectUri = "http://127.0.0.1:56748/msal";
+    private const string redirectUri = "http://127.0.0.1:56748";
     private readonly string clientId;
     private readonly string authenticationFile;
     private readonly NetworkClient client;
