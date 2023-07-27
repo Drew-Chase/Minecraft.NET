@@ -25,14 +25,15 @@ internal static class MinecraftTest
         await JavaController.DownloadJava(javaPath);
         InstanceManager manager = new(Path.GetFullPath("./minecraft/instances"));
         InstanceModel? instance = null;
-        if (!manager.Exist("Test"))
+        string name = "Drew's <CODE>";
+        if (!manager.Exist(name))
         {
             MinecraftVersion? version = MinecraftVersionController.GetMinecraftVersionByName("1.20.1");
             if (version != null)
             {
                 instance = manager.Create(new()
                 {
-                    Name = "Test",
+                    Name = name,
                     Java = JavaController.GetLocalJVMInstallations(javaPath).Latest,
                     MinecraftVersion = version.Value
                 });
@@ -40,7 +41,7 @@ internal static class MinecraftTest
         }
         else
         {
-            instance = manager.GetFirstInstancesByName("Test");
+            instance = manager.GetFirstInstancesByName(name);
         }
         if (instance != null)
         {
