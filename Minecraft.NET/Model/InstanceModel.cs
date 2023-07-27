@@ -20,6 +20,8 @@ public sealed class InstanceModel
     public string Java { get; set; }
     public string JVMArguments { get; set; } = "";
     public string MinecraftArguments { get; set; } = "";
+    public string[] AdditionalClassPaths { get; set; } = Array.Empty<string>();
+    public string LaunchClassPath { get; set; } = "net.minecraft.client.main.Main";
     public RAMInfo RAM { get; set; } = new();
     public ModLoaderModel ModLoader { get; set; }
     public ModModel[] Mods { get; set; } = Array.Empty<ModModel>();
@@ -27,6 +29,8 @@ public sealed class InstanceModel
     public DateTime Created { get; set; } = DateTime.Now;
     public DateTime LastModified { get; set; } = DateTime.Now;
     public string ClientJar { get; set; } = "";
+    public int WindowWidth { get; set; } = 854;
+    public int WindowHeight { get; set; } = 480;
 
     [JsonIgnore]
     public InstanceManager InstanceManager { get; set; }
