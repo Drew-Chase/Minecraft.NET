@@ -154,6 +154,7 @@ public class MinecraftClient : IDisposable
                 tasks.Add(_client.DownloadFileAsync(new Uri(artifact.Downloads.Artifact.Url), absolutePath, (s, e) => { }));
             }
             Task.WaitAll(tasks.ToArray());
+            Console.WriteLine("Libraries Download Completed!");
             SaveToCache();
         }
         else
@@ -252,6 +253,7 @@ public class MinecraftClient : IDisposable
                 if (json["objects"] is JObject objects)
                 {
                     List<Task> tasks = new();
+                    List<string> items = new();
                     foreach (JProperty property in objects.Properties())
                     {
                         string fileName = property.Name;
@@ -262,10 +264,17 @@ public class MinecraftClient : IDisposable
                         string absolutePath = Path.Combine(_clientInfo.Assets, "objects", subFolder, hash);
                         string directory = Directory.CreateDirectory(Directory.GetParent(absolutePath)?.FullName ?? "").FullName;
 
-                        await Console.Out.WriteLineAsync($"Downloading '{fileName}'");
-                        tasks.Add(_client.DownloadFileAsync(new Uri(fileUrl), absolutePath, (s, e) => { }));
+                        // Checks if the file has already been downloaded because Mojang has has
+                        // duplicate assets in the assets directory for some reason!?!?!??!
+                        if (!items.Contains(absolutePath))
+                        {
+                            await Console.Out.WriteLineAsync($"Downloading '{fileName}'");
+                            tasks.Add(_client.DownloadFileAsync(new Uri(fileUrl), absolutePath, (s, e) => { }));
+                            items.Add(absolutePath);
+                        }
                     }
                     Task.WaitAll(tasks.ToArray());
+                    Console.WriteLine("Asset Download Completed!");
                     SaveToCache();
                 }
             }
@@ -338,7 +347,7 @@ public class MinecraftClient : IDisposable
     {
         string cmd = "";
         string classPaths = string.Join(';', Directory.GetFiles(_clientInfo.LibrariesPath, "*.jar", SearchOption.AllDirectories));
-        instance = manager.Load(instance.Id) ?? instance;
+        instance.InstanceManager.Load(instance.Path);
         try
         {
             string natives = Directory.CreateDirectory(Path.Combine(rootDirectory, "natives", instance.MinecraftVersion.ID)).FullName;
