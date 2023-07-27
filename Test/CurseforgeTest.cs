@@ -6,6 +6,7 @@
 */
 
 using Chase.Minecraft.Curseforge.Controller;
+using Chase.Minecraft.Curseforge.Model;
 using Serilog;
 
 namespace Test;
@@ -55,5 +56,14 @@ internal static class CurseforgeTest
         Console.Write($"[{(project == null ? "FAIL" : "SUCCESS")}]");
         Console.ResetColor();
         Log.Debug($" Search Curseforge World!");
+    }
+
+    private static async Task Overview()
+    {
+        using CurseforgeClient client = new CurseforgeClient("api-key");
+        CurseforgeSearchResult? modpacks = await client.SearchModpackAsync("Skyblock", "1.19.4", Chase.Minecraft.ModLoaders.Fabric);
+        CurseforgeSearchResult? mods = await client.SearchModsAsync("Warp", "1.19.4", Chase.Minecraft.ModLoaders.Fabric);
+        CurseforgeSearchResult? worlds = await client.SearchWorldsAsync("OneBlock ", "1.19.4");
+        CurseforgeSearchResult? resourcepacks = await client.SearchResourcepacksAsync("Faithful", "1.19.4");
     }
 }
