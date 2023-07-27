@@ -1,3 +1,5 @@
+![](/Icons/CurseForge.jpg)
+
 # CurseForge.NET Library
 
 The CurseForge.NET library provides functionalities to interact with the CurseForge API, enabling developers to search for and retrieve information about modpacks, mods, worlds, and resource packs hosted on CurseForge. This library facilitates seamless integration with the CurseForge platform for Minecraft-related projects.
