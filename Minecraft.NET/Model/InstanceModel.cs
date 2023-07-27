@@ -18,8 +18,8 @@ public sealed class InstanceModel
     public string Path { get; set; }
     public string? Image { get; set; } = null;
     public string Java { get; set; }
-    public string JVMArguments { get; set; } = "";
-    public string MinecraftArguments { get; set; } = "";
+    public string[] JVMArguments { get; set; } = Array.Empty<string>();
+    public string[] MinecraftArguments { get; set; } = Array.Empty<string>();
     public string[] AdditionalClassPaths { get; set; } = Array.Empty<string>();
     public string LaunchClassPath { get; set; } = "net.minecraft.client.main.Main";
     public RAMInfo RAM { get; set; } = new();
