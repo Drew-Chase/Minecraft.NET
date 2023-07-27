@@ -12,6 +12,7 @@ using Chase.Networking;
 using Chase.Networking.Event;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Serilog;
 using System.Diagnostics;
 
 namespace Chase.Minecraft.Controller;
@@ -74,6 +75,7 @@ public class MinecraftClient : IDisposable
     /// <param name="clientVersion">the clients version</param>
     public void SetClientInfo(string clientId, string clientName, string clientVersion)
     {
+        Log.Debug("Setting client info: ID: {ID} Name: {NAME} Version: {VERSION}", clientId, clientName, clientVersion);
         _clientInfo.ClientID = clientId;
         _clientInfo.ClientName = clientName;
         _clientInfo.ClientVersion = clientVersion;
@@ -87,11 +89,13 @@ public class MinecraftClient : IDisposable
             string? token = await auth.GetMinecraftBearerAccessToken();
             if (token != null)
             {
+                Log.Debug("Authenticated user!");
                 _clientInfo.AuthenticationToken = token;
                 isAuthenticated = true;
                 return true;
             }
         }
+        Log.Warning("Failed to authenticate user");
         isAuthenticated = false;
         return false;
     }
@@ -99,11 +103,11 @@ public class MinecraftClient : IDisposable
     /// <summary>
     /// Starts the Minecraft client process.
     /// </summary>
-    /// <param name="outputRecieved">
+    /// <param name="outputReceived">
     /// An optional event handler to receive the output data from the process.
     /// </param>
     /// <returns>The <see cref="Process"/> representing the started Minecraft client process.</returns>
-    public Process Start(DataReceivedEventHandler? outputRecieved = null)
+    public Process Start(DataReceivedEventHandler? outputReceived = null)
     {
         if (!LoadFromCache())
         {
@@ -115,16 +119,23 @@ public class MinecraftClient : IDisposable
             {
                 FileName = instance.Java,
                 Arguments = BuildJavaCommand(),
-                UseShellExecute = true,
-                WorkingDirectory = instance.Path
+                UseShellExecute = false,
+                WorkingDirectory = instance.Path,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
             },
             EnableRaisingEvents = true,
         };
 
-        outputRecieved ??= (s, e) => { };
-        process.OutputDataReceived += outputRecieved;
+        Log.Debug("Starting client with arguments: {args}", process.StartInfo.Arguments);
+
+        outputReceived ??= (s, e) => { };
+        process.OutputDataReceived += outputReceived;
+        process.ErrorDataReceived += outputReceived;
 
         process.Start();
+        process.BeginOutputReadLine();
+        process.BeginErrorReadLine();
         return process;
     }
 
@@ -149,17 +160,17 @@ public class MinecraftClient : IDisposable
             {
                 string absolutePath = Path.Combine(_clientInfo.LibrariesPath, artifact.Downloads.Artifact.Path);
                 string filename = absolutePath.Split('/').Last();
-                await Console.Out.WriteLineAsync($"Downloading '{artifact.Downloads.Artifact.Path}'");
+                Log.Debug($"Downloading '{artifact.Downloads.Artifact.Path}'");
                 string directory = Directory.CreateDirectory(Directory.GetParent(absolutePath)?.FullName ?? "").FullName;
                 tasks.Add(_client.DownloadFileAsync(new Uri(artifact.Downloads.Artifact.Url), absolutePath, (s, e) => { }));
             }
             Task.WaitAll(tasks.ToArray());
-            Console.WriteLine("Libraries Download Completed!");
+            Log.Debug("Libraries Download Completed!");
             SaveToCache();
         }
         else
         {
-            Console.WriteLine("Request failed with status code: " + response.StatusCode);
+            Log.Debug("Request failed with status code: " + response.StatusCode);
         }
     }
 
@@ -209,7 +220,7 @@ public class MinecraftClient : IDisposable
         {
             _clientInfo = JObject.Parse(File.ReadAllText(cacheFile)).ToObject<ClientInfo>() ?? _clientInfo;
         }
-        return ValidateAssets() && ValidateLibraries();
+        return ValidateAssets() && ValidateLibraries() && ValidateClient();
     }
 
     /// <summary>
@@ -268,13 +279,13 @@ public class MinecraftClient : IDisposable
                         // duplicate assets in the assets directory for some reason!?!?!??!
                         if (!items.Contains(absolutePath))
                         {
-                            await Console.Out.WriteLineAsync($"Downloading '{fileName}'");
+                            Log.Debug($"Downloading '{fileName}'");
                             tasks.Add(_client.DownloadFileAsync(new Uri(fileUrl), absolutePath, (s, e) => { }));
                             items.Add(absolutePath);
                         }
                     }
                     Task.WaitAll(tasks.ToArray());
-                    Console.WriteLine("Asset Download Completed!");
+                    Log.Debug("Asset Download Completed!");
                     SaveToCache();
                 }
             }
@@ -299,12 +310,30 @@ public class MinecraftClient : IDisposable
                 {
                     if (!File.Exists(Path.Combine(_clientInfo.LibrariesPath, file.Downloads.Artifact.Path)))
                     {
+                        Log.Warning("Failed to validate libraries");
                         return false;
                     }
                 }
                 return true;
             }
         }
+        Log.Warning("Failed to validate libraries");
+        return false;
+    }
+
+    private bool ValidateClient()
+    {
+        string clientJar = Path.Combine(rootDirectory, "versions", instance.MinecraftVersion.ID, "client.jar");
+        if (File.Exists(clientJar))
+        {
+            if (instance.ClientJar != clientJar)
+            {
+                instance.ClientJar = clientJar;
+                instance.InstanceManager.Save(instance.Id, instance);
+            }
+            return true;
+        }
+
         return false;
     }
 
@@ -336,6 +365,7 @@ public class MinecraftClient : IDisposable
                 }
             }
         }
+        Log.Warning("Failed to validate asset files");
         return false;
     }
 
@@ -352,7 +382,7 @@ public class MinecraftClient : IDisposable
         {
             string natives = Directory.CreateDirectory(Path.Combine(rootDirectory, "natives", instance.MinecraftVersion.ID)).FullName;
 
-            string jvm = $"{instance.JVMArguments} " +
+            string jvm = $"{string.Join(" ", instance.JVMArguments)} " +
                 $"-Xmx{instance.RAM.MaximumRamMB}M " +
                 $"-Xms{instance.RAM.MinimumRamMB}M " +
                 $"-XX:HeapDumpPath=MojangTricksIntelDriversForPerformance_javaw.exe_minecraft.exe.heapdump " +
@@ -363,7 +393,7 @@ public class MinecraftClient : IDisposable
                 $"-Dminecraft.launcher.version={_clientInfo.ClientVersion} " +
                 $"-cp \"{classPaths};{string.Join(";", instance.AdditionalClassPaths)};{instance.ClientJar}\" ";
 
-            string minecraftArgs = $"{instance.MinecraftArguments} " +
+            string minecraftArgs = $"{string.Join(" ", instance.MinecraftArguments)} " +
                 $"--username {Username} " +
                 $"--version {instance.MinecraftVersion.ID} " +
                 $"--gameDir \"{instance.Path}\" " +
@@ -378,13 +408,14 @@ public class MinecraftClient : IDisposable
         }
         catch (Exception e)
         {
-            Console.WriteLine(e.StackTrace);
+            Log.Error("Failed to build arguments", e);
         }
         return cmd;
     }
 
     private void SaveToCache()
     {
+        Log.Debug("Saving client cache!");
         string cacheFile = Path.Combine(Directory.CreateDirectory(Path.Combine(rootDirectory, "versions", instance.MinecraftVersion.ID)).FullName, "cache.json");
         using (FileStream fs = new(cacheFile, FileMode.Create, FileAccess.Write, FileShare.None))
         {
