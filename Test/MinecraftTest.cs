@@ -6,6 +6,7 @@
 */
 
 using Chase.Minecraft.Controller;
+using Chase.Minecraft.Fabric;
 using Chase.Minecraft.Instances;
 using Chase.Minecraft.Model;
 using System.Diagnostics;
@@ -54,6 +55,17 @@ internal static class MinecraftTest
         InstanceModel[] instances = manager.GetInstancesByName("Test"); // Gets a list of instances with the name of "Test"
         instance = manager.GetInstanceById(instance.Id); // Gets the instance based on the unique GUID
 
+        MinecraftVersionManifest minecraftVersionManifest = MinecraftVersionController.GetMinecraftVersionManifest().Value; // Gets a minecraft version manifest from mojang
+        MinecraftVersion[] versions = minecraftVersionManifest.Versions; // Gets a list of all minecraft versions, releases and snapshots
+
+        string latestSnapshot = minecraftVersionManifest.Latest.Snapshot; // The latest Minecraft Snapshot Version as a string
+        string latestMinecraftVerson = minecraftVersionManifest.Latest.Release; // The latest Minecraft Version as a string
+
+        MinecraftVersion latestVersion = MinecraftVersionController.GetMinecraftVersionByName(latestMinecraftVerson).Value; // Creates a MinecraftVersion object based on the version string
+        instance.MinecraftVersion = latestVersion; // This sets the minecraft version to the latest
+        manager.Save(instance.Id, instance); // This saves the instance to file
+        instance.InstanceManager.Save(instance.Id, instance); // This gets the instance manager from the instance and saves it to file.
+
         using MinecraftClient client = new MinecraftClient("dev", "./minecraft", instance);  // Creates a minecraft client based on the instance with an offline user
 
         // Setup client information.
@@ -76,5 +88,16 @@ internal static class MinecraftTest
         };
         Process process = client.Start(); // this will start the minecraft client based on the information previously provided.
         process.WaitForExit();
+    }
+
+    private static async Task InstallFabric()
+    {
+        // Gets the instance from the instance manager
+        InstanceManager manager = new InstanceManager("./instances");
+        InstanceModel instance = manager.GetFirstInstancesByName("Test");
+
+        // Gets the latest loader and
+        string[] loader_versions = await FabricLoader.GetLoaderVersions(); // This gets an array of all fabric loader versions
+        await FabricLoader.Install(loader_versions.First(), instance); // Downloads and installs the specified fabric loader version to the specified instance
     }
 }

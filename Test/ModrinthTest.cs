@@ -6,6 +6,7 @@
 */
 
 using Chase.Minecraft.Instances;
+using Chase.Minecraft.Model;
 using Chase.Minecraft.Modrinth;
 using Chase.Minecraft.Modrinth.Controller;
 using Chase.Minecraft.Modrinth.Data;
@@ -115,5 +116,31 @@ internal class ModrinthTest
         Console.Write($"[{(!success ? "FAIL" : "SUCCESS")}]");
         Console.ResetColor();
         Log.Debug($" Get Project Version File!");
+    }
+
+    private static async Task Overview()
+    {
+        InstanceModel instance = new();
+
+        FacetBuilder builder = new FacetBuilder()
+           .AddVersions("1.19.4")
+           .AddProjectTypes(ModrinthProjectTypes.Mod)
+           .AddModloaders(Chase.Minecraft.ModLoaders.Fabric);
+        ModrinthSearchQuery query = new()
+        {
+            Facets = builder,
+            Query = "The Warp Mod",
+            Limit = 2,
+            Ordering = SearchOrdering.Relevance,
+        };
+        using ModrinthClient client = new(); // This creates a Modrinth client that can be used to make various api calls.
+        CategoryTag[]? categories = await client.GetCategoriesAsync(); // Gets a list of all Modrinth Categories.
+        ModrinthSearchResult? results = await client.SearchAsync(query); // This searches the modrinth api with the specified query
+        ModrinthSearchResultItem topResult = results.Value.Hits[0]; // Gets the top result
+        ModrinthVersionFile[]? projectVersions = await client.GetProjectVersionsAsync(topResult.ProjectId); // Gets a list of all of the projects versions
+        string filePath = await client.DownloadVersionFile(projectVersions[0].Files[0], instance, "mods"); // Downloads the latest mod version and place it in the "mods" directory inside the instance directory.
+        ModrinthProjectDependencies? dependencies = await client.GetProjectDependenciesAsync(topResult.ProjectId); // Gets a list of all of the projects dependencies.
+        ModrinthUser? user = await client.GetUserAsync("dcmanproductions"); // Gets a Modrinth User based on their username.
+        ModrinthProject[] projects = user?.Projects ?? Array.Empty<ModrinthProject>(); // Gets a list of the users projects.
     }
 }
