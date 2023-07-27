@@ -91,7 +91,7 @@ public class InstanceManager
 
     public InstanceModel GetFirstInstancesByName(string name) => Instances.Values.First(i => i.Name == name);
 
-    public InstanceModel GetInstanceById(string name) => Instances.Values.First(i => i.Name == name);
+    public InstanceModel GetInstanceById(Guid id) => Instances[id];
 
     public bool Exist(string name) => Instances.Values.Any(i => i.Name == name);
 
