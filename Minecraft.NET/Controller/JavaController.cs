@@ -14,14 +14,35 @@ using System.Runtime.InteropServices;
 
 namespace Chase.Minecraft.Controller;
 
+/// <summary>
+/// Represents the paths to the installed Legacy and Latest Java versions.
+/// </summary>
 public struct JVMInstallations
 {
+    /// <summary>
+    /// Gets or sets the path to the Latest Java version.
+    /// </summary>
     public string? Latest { get; set; }
+
+    /// <summary>
+    /// Gets or sets the path to the Legacy Java version.
+    /// </summary>
     public string? Legacy { get; set; }
 }
 
+/// <summary>
+/// Utility class for managing Java installations.
+/// </summary>
 public static class JavaController
 {
+    /// <summary>
+    /// Gets the installed Legacy and Latest Java versions or null if not installed.
+    /// </summary>
+    /// <param name="path">The path to the Java installations directory.</param>
+    /// <returns>
+    /// A <see cref="JVMInstallations"/> struct containing the paths to the installed Legacy and
+    /// Latest Java versions.
+    /// </returns>
     public static JVMInstallations GetLocalJVMInstallations(string path)
     {
         string latest = Path.Combine(path, "java-latest", "bin", "java.exe");
@@ -43,8 +64,30 @@ public static class JavaController
         return installations;
     }
 
+    /// <summary>
+    /// Gets all Java versions that are installed on the system and available through the system's
+    /// Environment 'PATH'.
+    /// </summary>
+    /// <returns>An array of strings representing the paths to the installed Java versions.</returns>
     public static string[] GetGlobalJVMInstallations() => Environment.GetEnvironmentVariable("PATH")?.Split(";")?.Where(i => i.Contains("jdk") || i.Contains("jre") || i.Contains("java")).ToArray() ?? Array.Empty<string>();
 
+    /// <summary>
+    /// Downloads Java 8 (Legacy) and Java 17 (Latest) from Mojang and places them in the specified directory.
+    /// </summary>
+    /// <param name="path">The path to the directory where Java versions should be downloaded.</param>
+    /// <param name="javaLatestProgressEvent">
+    /// An optional event handler to monitor the download progress of Java 17 (Latest).
+    /// </param>
+    /// <param name="javaLegacyProgressEvent">
+    /// An optional event handler to monitor the download progress of Java 8 (Legacy).
+    /// </param>
+    /// <param name="force">
+    /// If true, forces the download even if the Java versions are already installed.
+    /// </param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    /// <exception cref="InvalidSystemException">
+    /// Thrown when the current system's architecture is not supported.
+    /// </exception>
     public static async Task DownloadJava(string path, DownloadProgressEvent? javaLatestProgressEvent = null, DownloadProgressEvent? javaLegacyProgressEvent = null, bool force = false)
     {
         path = Directory.CreateDirectory(path).FullName;
