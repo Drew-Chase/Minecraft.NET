@@ -13,11 +13,21 @@ using System.Diagnostics;
 
 namespace Chase.Minecraft.Fabric;
 
+/// <summary>
+/// A static class that handles the installation and management of Fabric modloader for Minecraft instances.
+/// </summary>
 public static class FabricLoader
 {
     private static readonly string MavenURL = "https://maven.fabricmc.net";
     private static readonly string MavenInstallerPath = "/net/fabricmc/fabric-installer/";
 
+    /// <summary>
+    /// Install the specified version of Fabric modloader for the given Minecraft instance.
+    /// </summary>
+    /// <param name="version">The version of Fabric modloader to install.</param>
+    /// <param name="instance">The Minecraft instance model for which to install the modloader.</param>
+    /// <returns>A task representing the asynchronous installation process.</returns>
+    /// <exception cref="Exception">Thrown when the Fabric installer version could not be found.</exception>
     public static async Task Install(string version, InstanceModel instance)
     {
         using NetworkClient client = new();
@@ -60,6 +70,10 @@ public static class FabricLoader
         }
     }
 
+    /// <summary>
+    /// Get a list of available Fabric modloader versions.
+    /// </summary>
+    /// <returns>An array of strings representing the available Fabric modloader versions.</returns>
     public static async Task<string[]> GetLoaderVersions()
     {
         using NetworkClient client = new();
@@ -89,6 +103,11 @@ public static class FabricLoader
         return Array.Empty<string>();
     }
 
+    /// <summary>
+    /// Get the latest version of the Fabric installer.
+    /// </summary>
+    /// <param name="client">The NetworkClient used for making HTTP requests.</param>
+    /// <returns>The latest version of the Fabric installer as a string, or null if not found.</returns>
     private static async Task<string?> GetLatestInstallerVersion(NetworkClient client)
     {
         using HttpResponseMessage response = await client.GetAsync(MavenURL + MavenInstallerPath);
