@@ -11,7 +11,7 @@ internal sealed class ClientInfo
 {
     public string Assets { get; set; }
     public string AssetIndex { get; set; }
-    public string Libraries { get; set; }
+    public string LibrariesPath { get; set; }
     public string AuthenticationToken { get; set; } = "0";
     public string ClientID { get; set; } = "0";
     public string ClientVersion { get; set; } = "0.0.0";
