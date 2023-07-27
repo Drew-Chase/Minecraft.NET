@@ -48,7 +48,6 @@ public class CurseforgeClient : IDisposable
         {
             url += $"&modLoaderType={loader}";
         }
-        await Console.Out.WriteLineAsync(url);
         using HttpRequestMessage request = new(HttpMethod.Get, url);
         request.Headers.Add("x-api-key", _api);
         HttpResponseMessage response = await _client.SendAsync(request);
