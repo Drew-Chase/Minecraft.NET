@@ -13,8 +13,6 @@ public struct RAMInfo
 
     public int MinimumRamMB { get; set; } = 4096;
 
-    public int PermGenSizeMB { get; set; } = 128;
-
     public RAMInfo()
     {
     }
