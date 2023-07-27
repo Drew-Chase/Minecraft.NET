@@ -183,11 +183,14 @@ public sealed class ModrinthClient : IDisposable
     /// <param name="versionFile">The version file details.</param>
     /// <param name="outputDirectory">The directory where the file will be saved.</param>
     /// <param name="downloadProgress">The event to track the download progress.</param>
+    /// <param name="subpath">
+    /// The folder inside of the instance directory that the file will be downloaded to.
+    /// </param>
     /// <returns>A Task containing the path to the downloaded file.</returns>
-    public async Task<string> DownloadVersionFile(VersionFileDetails versionFile, InstanceModel instance, DownloadProgressEvent? downloadProgress = null)
+    public async Task<string> DownloadVersionFile(VersionFileDetails versionFile, InstanceModel instance, string subpath = "mods", DownloadProgressEvent? downloadProgress = null)
     {
         downloadProgress ??= (s, e) => { };
-        string path = Path.Combine(Directory.CreateDirectory(Path.Combine(instance.Path, "mods")).FullName, versionFile.Filename);
+        string path = Path.Combine(Directory.CreateDirectory(Path.Combine(instance.Path, subpath)).FullName, versionFile.Filename);
         instance.InstanceManager.AddMod(instance, new()
         {
             Source = Minecraft.Data.PlatformSource.Modrinth,
