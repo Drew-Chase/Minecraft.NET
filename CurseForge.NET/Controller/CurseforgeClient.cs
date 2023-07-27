@@ -7,7 +7,6 @@
 
 using Chase.Minecraft.Curseforge.Model;
 using Chase.Networking;
-using Newtonsoft.Json.Linq;
 
 namespace Chase.Minecraft.Curseforge.Controller;
 
@@ -50,14 +49,10 @@ public class CurseforgeClient : IDisposable
         }
         using HttpRequestMessage request = new(HttpMethod.Get, url);
         request.Headers.Add("x-api-key", _api);
-        HttpResponseMessage response = await _client.SendAsync(request);
-        if (response.IsSuccessStatusCode)
+        CurseforgeSearchResult? result = (await _client.GetAsJson(request))?.ToObject<CurseforgeSearchResult>();
+        if (result != null)
         {
-            CurseforgeSearchResult? result = JObject.Parse(await response.Content.ReadAsStringAsync())?.ToObject<CurseforgeSearchResult>();
-            if (result != null)
-            {
-                return result.Value;
-            }
+            return result.Value;
         }
         return null;
     }

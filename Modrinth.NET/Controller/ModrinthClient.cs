@@ -197,7 +197,7 @@ public sealed class ModrinthClient : IDisposable
             DownloadURL = versionFile.Url,
             Name = versionFile.Filename,
         });
-        await _client.DownloadFileAsync(new(versionFile.Url), path, downloadProgress);
+        await _client.DownloadFileAsync(versionFile.Url, path, downloadProgress);
 
         return path;
     }

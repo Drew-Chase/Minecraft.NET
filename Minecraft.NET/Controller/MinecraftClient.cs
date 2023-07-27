@@ -149,29 +149,19 @@ public class MinecraftClient : IDisposable
     public async Task DownloadLibraries()
     {
         _clientInfo.LibrariesPath = Directory.CreateDirectory(Path.Combine(rootDirectory, "libraries")).FullName;
-
-        using HttpResponseMessage response = await _client.GetAsync(instance.MinecraftVersion.URL);
-
-        if (response.IsSuccessStatusCode)
+        _clientInfo.LibraryFiles = (await _client.GetAsJson(instance.MinecraftVersion.URL.ToString()))?["libraries"]?.ToObject<DownloadArtifact[]>() ?? Array.Empty<DownloadArtifact>();
+        List<Task> tasks = new();
+        foreach (DownloadArtifact artifact in _clientInfo.LibraryFiles)
         {
-            _clientInfo.LibraryFiles = JObject.Parse(await response.Content.ReadAsStringAsync())["libraries"]?.ToObject<DownloadArtifact[]>() ?? Array.Empty<DownloadArtifact>();
-            List<Task> tasks = new();
-            foreach (DownloadArtifact artifact in _clientInfo.LibraryFiles)
-            {
-                string absolutePath = Path.Combine(_clientInfo.LibrariesPath, artifact.Downloads.Artifact.Path);
-                string filename = absolutePath.Split('/').Last();
-                Log.Debug($"Downloading '{artifact.Downloads.Artifact.Path}'");
-                string directory = Directory.CreateDirectory(Directory.GetParent(absolutePath)?.FullName ?? "").FullName;
-                tasks.Add(_client.DownloadFileAsync(new Uri(artifact.Downloads.Artifact.Url), absolutePath, (s, e) => { }));
-            }
-            Task.WaitAll(tasks.ToArray());
-            Log.Debug("Libraries Download Completed!");
-            SaveToCache();
+            string absolutePath = Path.Combine(_clientInfo.LibrariesPath, artifact.Downloads.Artifact.Path);
+            string filename = absolutePath.Split('/').Last();
+            Log.Debug($"Downloading '{artifact.Downloads.Artifact.Path}'");
+            string directory = Directory.CreateDirectory(Directory.GetParent(absolutePath)?.FullName ?? "").FullName;
+            tasks.Add(_client.DownloadFileAsync(new Uri(artifact.Downloads.Artifact.Url), absolutePath, (s, e) => { }));
         }
-        else
-        {
-            Log.Debug("Request failed with status code: " + response.StatusCode);
-        }
+        Task.WaitAll(tasks.ToArray());
+        Log.Debug("Libraries Download Completed!");
+        SaveToCache();
     }
 
     /// <summary>
@@ -202,7 +192,7 @@ public class MinecraftClient : IDisposable
         {
             progressEvent ??= (s, e) => { };
             instance.ClientJar = Path.Combine(Directory.CreateDirectory(Path.Combine(rootDirectory, "versions", instance.MinecraftVersion.ID)).FullName, "client.jar");
-            await _client.DownloadFileAsync(new(url), instance.ClientJar, progressEvent);
+            await _client.DownloadFileAsync(url, instance.ClientJar, progressEvent);
         }
         SaveToCache();
     }

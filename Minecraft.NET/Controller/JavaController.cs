@@ -159,7 +159,7 @@ public static class JavaController
                     try
                     {
                         Log.Debug($"Downloading {item.Name}");
-                        tasks.Add(client.DownloadFileAsync(new(url), filepath, progressEvent));
+                        tasks.Add(client.DownloadFileAsync(url, filepath, progressEvent));
                     }
                     catch { }
                 }
