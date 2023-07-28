@@ -72,6 +72,28 @@ public static class MicrosoftAuthentication
         return null;
     }
 
+    /// <summary>
+    /// Gets the user profile from the minecraft api. See: <seealso
+    /// cref="GetMinecraftBearerAccessToken(string, string, string)">GetMinecraftBearerAccessToken</seealso>
+    /// </summary>
+    /// <param name="accessToken">
+    /// The minecraft authentication bearer token <seealso
+    /// cref="GetMinecraftBearerAccessToken(string, string, string)">GetMinecraftBearerAccessToken</seealso>
+    /// </param>
+    /// <returns></returns>
+    public static async Task<UserProfile?> GetUserProfile(string accessToken)
+    {
+        using NetworkClient client = new();
+        using HttpRequestMessage request = new()
+        {
+            Method = HttpMethod.Get,
+            RequestUri = new("https://api.minecraftservices.com/minecraft/profile"),
+        };
+        request.Headers.Add("Authorization", $"Bearer {accessToken}");
+
+        return (await client.GetAsJson(request))?.ToObject<UserProfile>();
+    }
+
     private static string GenerateCodeVerifier()
     {
         const string allowedChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._~";
