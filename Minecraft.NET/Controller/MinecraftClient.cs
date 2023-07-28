@@ -116,8 +116,7 @@ public class MinecraftClient : IDisposable
     {
         if (!string.IsNullOrWhiteSpace(_clientInfo.ClientID))
         {
-            using MicrosoftAuthentication auth = new(_clientInfo.ClientID, _clientInfo.ClientRedirectUri.ToString(), authenticationFile);
-            string? token = await auth.GetMinecraftBearerAccessToken();
+            string? token = await MicrosoftAuthentication.GetMinecraftBearerAccessToken(_clientInfo.ClientID, _clientInfo.ClientRedirectUri.ToString(), authenticationFile);
             if (token != null)
             {
                 Log.Debug("Authenticated user!");
@@ -138,10 +137,8 @@ public class MinecraftClient : IDisposable
     /// <returns>The <see cref="Process"/> representing the started Minecraft client process.</returns>
     public Process Start(DataReceivedEventHandler? outputReceived = null)
     {
-        if (!LoadFromCache())
-        {
-            Task.WaitAll(DownloadAssets(), DownloadLibraries(), DownloadClient());
-        }
+        LoadFromCache();
+        Task.WaitAll(DownloadAssets(), DownloadLibraries(), DownloadClient());
         Process process = new()
         {
             StartInfo = new()
@@ -177,12 +174,12 @@ public class MinecraftClient : IDisposable
     /// <returns>A Task that represents the asynchronous operation.</returns>
     public async Task DownloadLibraries(bool force = false)
     {
+        _clientInfo.LibrariesPath = Directory.CreateDirectory(Path.Combine(rootDirectory, "libraries")).FullName;
+        _clientInfo.LibraryFiles = (await _client.GetAsJson(instance.MinecraftVersion.URL.ToString()))?["libraries"]?.ToObject<DownloadArtifact[]>() ?? Array.Empty<DownloadArtifact>();
         if (ValidateLibraries() && !force)
         {
             return;
         }
-        _clientInfo.LibrariesPath = Directory.CreateDirectory(Path.Combine(rootDirectory, "libraries")).FullName;
-        _clientInfo.LibraryFiles = (await _client.GetAsJson(instance.MinecraftVersion.URL.ToString()))?["libraries"]?.ToObject<DownloadArtifact[]>() ?? Array.Empty<DownloadArtifact>();
         List<Task> tasks = new();
         foreach (DownloadArtifact artifact in _clientInfo.LibraryFiles)
         {
@@ -260,12 +257,6 @@ public class MinecraftClient : IDisposable
     /// <returns>A Task that represents the asynchronous operation.</returns>
     public async Task DownloadAssets(bool force = false)
     {
-        if (ValidateAssets() && !force)
-        {
-            return;
-        }
-        string assetsBasePath = Directory.CreateDirectory(Path.Combine(rootDirectory, "assets")).FullName;
-        string indexesPath = Directory.CreateDirectory(Path.Combine(assetsBasePath, "indexes")).FullName;
         string resourcesBaseUrl = "https://resources.download.minecraft.net/";
 
         string url = "";
@@ -279,10 +270,15 @@ public class MinecraftClient : IDisposable
                 index = json["assetIndex"]?["id"]?.ToObject<string>() ?? "";
             }
         }
+        _clientInfo.Assets = Directory.CreateDirectory(Path.Combine(rootDirectory, "assets")).FullName;
+        _clientInfo.AssetIndex = index;
+        string indexesPath = Directory.CreateDirectory(Path.Combine(_clientInfo.Assets, "indexes")).FullName;
+        if (ValidateAssets() && !force)
+        {
+            return;
+        }
         if (!string.IsNullOrWhiteSpace(url) && !string.IsNullOrWhiteSpace(index))
         {
-            _clientInfo.AssetIndex = index;
-            _clientInfo.Assets = assetsBasePath;
             using HttpResponseMessage response = await _client.GetAsync(url);
             if (response.IsSuccessStatusCode)
             {
