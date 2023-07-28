@@ -7,8 +7,10 @@
 
 using Chase.Minecraft.Controller;
 using Chase.Minecraft.Fabric;
+using Chase.Minecraft.Forge;
 using Chase.Minecraft.Instances;
 using Chase.Minecraft.Model;
+using Serilog;
 using System.Diagnostics;
 
 namespace Test;
@@ -17,21 +19,27 @@ internal static class MinecraftTest
 {
     public static async Task Start()
     {
+        //await DownloadJava();
+        //await LaunchMinecraft();
+        Process process = MinecraftClient.Launch("dev", "./minecraft", new InstanceManager("./minecraft/instances").GetFirstInstancesByName("Test"));
+        process.WaitForExit();
     }
 
     private static async Task DownloadJava()
     {
         await JavaController.DownloadJava("./java"); // This will download Java 8 (Legacy) and Java 17 (Latest) from Mojang and place it in the directory specified.
-
+        Log.Debug("Java Done");
         string[] installedJavaVersions = JavaController.GetGlobalJVMInstallations(); // This will get all java versions that are installed on the system and available through the systems Environment 'PATH'
+        Log.Debug("Java Global");
 
         JVMInstallations installations = JavaController.GetLocalJVMInstallations("./java"); // This will get the installed Legacy and Latest java versions or null if not installed.
+        Log.Debug("Java Local");
     }
 
     private static async Task LaunchMinecraft()
     {
         // Create an instance manager This will handle all instances for the directory specified.
-        InstanceManager manager = new InstanceManager("./instances");
+        InstanceManager manager = new InstanceManager("./minecraft/instances");
 
         // Create an instance with the name of test. This will be placed in the instance directory
         // under a new directory named the same as the instance name. If a instance already exists a
@@ -50,10 +58,13 @@ internal static class MinecraftTest
                 MinimumRamMB = 1024
             }
         };
-        instance = manager.Create(instance); // This also returns the instance that was created with additional information.
-        instance = manager.GetFirstInstancesByName("Test"); // Gets the first instance found with the name of "Test"
-        InstanceModel[] instances = manager.GetInstancesByName("Test"); // Gets a list of instances with the name of "Test"
-        instance = manager.GetInstanceById(instance.Id); // Gets the instance based on the unique GUID
+        if (!manager.Exist("Test")) // Checks if the instance exists
+        {
+            instance = manager.Create(instance); // This also returns the instance that was created with additional information.
+            instance = manager.GetFirstInstancesByName("Test"); // Gets the first instance found with the name of "Test"
+            InstanceModel[] instances = manager.GetInstancesByName("Test"); // Gets a list of instances with the name of "Test"
+            instance = manager.GetInstanceById(instance.Id); // Gets the instance based on the unique GUID
+        }
 
         MinecraftVersionManifest minecraftVersionManifest = MinecraftVersionController.GetMinecraftVersionManifest().Value; // Gets a minecraft version manifest from mojang
         MinecraftVersion[] versions = minecraftVersionManifest.Versions; // Gets a list of all minecraft versions, releases and snapshots
@@ -69,14 +80,15 @@ internal static class MinecraftTest
         using MinecraftClient client = new MinecraftClient("dev", "./minecraft", instance);  // Creates a minecraft client based on the instance with an offline user
 
         // Setup client information.
-        client.SetClientInfo("Azure Client ID", "Azure Client Name", "Client Version"); // This is required to authenticate the user. view https://portal.azure.com/#view/Microsoft_AAD_IAM/ActiveDirectoryMenuBlade/~/RegisteredApps
-        await client.AuthenticateUser(); // This will prompt the user to login to their Microsoft Account.
+        client.SetClientInfo("f8b88f7d-77d7-49ca-9b97-5bb12a4ee48f", "Azure Client Name", "0.0.0", new("http://127.0.0.1:56748")); // This is required to authenticate the user. view https://portal.azure.com/#view/Microsoft_AAD_IAM/ActiveDirectoryMenuBlade/~/RegisteredApps
 
         // Downloads the clients resources. This is done automatically when you run the client. or
         // you can do it manually.
         await client.DownloadLibraries(); // This downloads the clients libraries
         await client.DownloadAssets(); // This will download any assets needed for minecraft.
         await client.DownloadClient(); // This will download the client jar.
+
+        //await InstallForge();
 
         DataReceivedEventHandler outputHandler = (s, e) =>
         {
@@ -93,11 +105,22 @@ internal static class MinecraftTest
     private static async Task InstallFabric()
     {
         // Gets the instance from the instance manager
-        InstanceManager manager = new InstanceManager("./instances");
+        InstanceManager manager = new InstanceManager("./minecraft/instances");
         InstanceModel instance = manager.GetFirstInstancesByName("Test");
 
-        // Gets the latest loader and
+        // Gets the latest loader and installs it
         string[] loader_versions = await FabricLoader.GetLoaderVersions(); // This gets an array of all fabric loader versions
         await FabricLoader.Install(loader_versions.First(), instance); // Downloads and installs the specified fabric loader version to the specified instance
+    }
+
+    private static async Task InstallForge()
+    {
+        // Gets the instance from the instance manager
+        InstanceManager manager = new InstanceManager("./minecraft/instances");
+        InstanceModel instance = manager.GetFirstInstancesByName("Test");
+
+        // Gets the latest loader and installs it
+        string[] loader_versions = await ForgeLoader.GetLoaderVersions("1.20.1"); // This gets an array of all fabric loader versions
+        await ForgeLoader.Install(loader_versions.First(), instance); // Downloads and installs the specified fabric loader version to the specified instance
     }
 }
