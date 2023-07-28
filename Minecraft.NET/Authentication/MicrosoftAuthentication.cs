@@ -21,16 +21,17 @@ namespace Chase.Minecraft.Authentication;
 
 internal class MicrosoftAuthentication : IDisposable
 {
-    private const string redirectUri = "http://127.0.0.1:56748";
+    private readonly string redirectUri;
     private readonly string clientId;
     private readonly string authenticationFile;
     private readonly NetworkClient client;
 
-    public MicrosoftAuthentication(string clientId, string authenticationFile = "msa-auth.json")
+    public MicrosoftAuthentication(string clientId, string redirectUri, string authenticationFile = "msa-auth.json")
     {
         client = new();
         this.clientId = clientId;
         this.authenticationFile = authenticationFile;
+        this.redirectUri = redirectUri;
     }
 
     public void Dispose()

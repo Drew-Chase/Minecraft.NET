@@ -66,9 +66,9 @@ public class MinecraftClient : IDisposable
     /// </param>
     /// <param name="clientVersion">The client version</param>
     /// <returns>The <see cref="Process"/> representing the launched Minecraft client.</returns>
-    public MinecraftClient(string username, string rootDirectory, InstanceModel instance, string clientId, string clientName, string clientVersion) : this(username, rootDirectory, instance)
+    public MinecraftClient(string username, string rootDirectory, InstanceModel instance, string clientId, string clientName, string clientVersion, Uri redirectUri) : this(username, rootDirectory, instance)
     {
-        SetClientInfo(clientId, clientName, clientVersion);
+        SetClientInfo(clientId, clientName, clientVersion, redirectUri);
     }
 
     /// <summary>
@@ -97,12 +97,14 @@ public class MinecraftClient : IDisposable
     /// <param name="clientId">The xbox client id.</param>
     /// <param name="clientName">The name of the client</param>
     /// <param name="clientVersion">the clients version</param>
-    public void SetClientInfo(string clientId, string clientName, string clientVersion)
+    /// <param name="redirectUri">The azure client redirect uri</param>
+    public void SetClientInfo(string clientId, string clientName, string clientVersion, Uri redirectUri)
     {
         Log.Debug("Setting client info: ID: {ID} Name: {NAME} Version: {VERSION}", clientId, clientName, clientVersion);
         _clientInfo.ClientID = clientId;
         _clientInfo.ClientName = clientName;
         _clientInfo.ClientVersion = clientVersion;
+        _clientInfo.ClientRedirectUri = redirectUri;
     }
 
     /// <summary>
@@ -110,11 +112,11 @@ public class MinecraftClient : IDisposable
     /// cref="SetClientInfo(string, string, string)">SetClientInfo</seealso>
     /// </summary>
     /// <returns>If the user was successfully authenticated.</returns>
-    public async Task<bool> AuthenticateUser()
+    public async Task<bool> AuthenticateUser(string authenticationFile = "msa-auth.json")
     {
         if (!string.IsNullOrWhiteSpace(_clientInfo.ClientID))
         {
-            using MicrosoftAuthentication auth = new(_clientInfo.ClientID);
+            using MicrosoftAuthentication auth = new(_clientInfo.ClientID, _clientInfo.ClientRedirectUri.ToString(), authenticationFile);
             string? token = await auth.GetMinecraftBearerAccessToken();
             if (token != null)
             {
@@ -173,8 +175,12 @@ public class MinecraftClient : IDisposable
     /// Libraries will be saved in a "libraries" directory under the specified ClientStartInfo's directory.
     /// </remarks>
     /// <returns>A Task that represents the asynchronous operation.</returns>
-    public async Task DownloadLibraries()
+    public async Task DownloadLibraries(bool force = false)
     {
+        if (ValidateLibraries() && !force)
+        {
+            return;
+        }
         _clientInfo.LibrariesPath = Directory.CreateDirectory(Path.Combine(rootDirectory, "libraries")).FullName;
         _clientInfo.LibraryFiles = (await _client.GetAsJson(instance.MinecraftVersion.URL.ToString()))?["libraries"]?.ToObject<DownloadArtifact[]>() ?? Array.Empty<DownloadArtifact>();
         List<Task> tasks = new();
@@ -182,7 +188,7 @@ public class MinecraftClient : IDisposable
         {
             string absolutePath = Path.Combine(_clientInfo.LibrariesPath, artifact.Downloads.Artifact.Path);
             string filename = absolutePath.Split('/').Last();
-            Log.Debug($"Downloading '{artifact.Downloads.Artifact.Path}'");
+            Log.Debug($"[Libraries] Downloading '{artifact.Downloads.Artifact.Path}'");
             string directory = Directory.CreateDirectory(Directory.GetParent(absolutePath)?.FullName ?? "").FullName;
             tasks.Add(_client.DownloadFileAsync(new Uri(artifact.Downloads.Artifact.Url), absolutePath, (s, e) => { }));
         }
@@ -194,6 +200,7 @@ public class MinecraftClient : IDisposable
     /// <summary>
     /// Asynchronously downloads the Minecraft client JAR file for the specified version.
     /// </summary>
+    /// <param name="force">If the client should be force downloaded</param>
     /// <param name="progressEvent">
     /// An optional event handler to receive the download progress data.
     /// </param>
@@ -203,8 +210,12 @@ public class MinecraftClient : IDisposable
     /// </remarks>
     /// <returns>A Task that represents the asynchronous operation.</returns>
 
-    public async Task DownloadClient(DownloadProgressEvent? progressEvent = null)
+    public async Task DownloadClient(bool force = false, DownloadProgressEvent? progressEvent = null)
     {
+        if (ValidateClient() && !force)
+        {
+            return;
+        }
         string? url = null;
 
         using (HttpResponseMessage response = await _client.GetAsync(instance.MinecraftVersion.URL))
@@ -247,8 +258,12 @@ public class MinecraftClient : IDisposable
     /// Assets will be saved in an "assets" directory under the specified ClientStartInfo's directory.
     /// </remarks>
     /// <returns>A Task that represents the asynchronous operation.</returns>
-    public async Task DownloadAssets()
+    public async Task DownloadAssets(bool force = false)
     {
+        if (ValidateAssets() && !force)
+        {
+            return;
+        }
         string assetsBasePath = Directory.CreateDirectory(Path.Combine(rootDirectory, "assets")).FullName;
         string indexesPath = Directory.CreateDirectory(Path.Combine(assetsBasePath, "indexes")).FullName;
         string resourcesBaseUrl = "https://resources.download.minecraft.net/";
@@ -296,7 +311,7 @@ public class MinecraftClient : IDisposable
                         // duplicate assets in the assets directory for some reason!?!?!??!
                         if (!items.Contains(absolutePath))
                         {
-                            Log.Debug($"Downloading '{fileName}'");
+                            Log.Debug($"[Assets] Downloading '{fileName}'");
                             tasks.Add(_client.DownloadFileAsync(new Uri(fileUrl), absolutePath, (s, e) => { }));
                             items.Add(absolutePath);
                         }
@@ -406,8 +421,8 @@ public class MinecraftClient : IDisposable
                 $"-Xss1M -Djava.library.path=\"{natives}\" -Djna.tmpdir=\"{natives}\" " +
                 $"-Dorg.lwjgl.system.SharedLibraryExtractPath=\"{natives}\" " +
                 $"-Dio.netty.native.workdir=\"{natives}\" " +
-                $"-Dminecraft.launcher.brand={_clientInfo.ClientName} " +
-                $"-Dminecraft.launcher.version={_clientInfo.ClientVersion} " +
+                $"-Dminecraft.launcher.brand=\"{_clientInfo.ClientName}\" " +
+                $"-Dminecraft.launcher.version=\"{_clientInfo.ClientVersion}\" " +
                 $"-cp \"{classPaths};{string.Join(";", instance.AdditionalClassPaths)};{instance.ClientJar}\" ";
 
             string minecraftArgs = $"{string.Join(" ", instance.MinecraftArguments)} " +
