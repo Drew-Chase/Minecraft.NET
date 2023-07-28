@@ -34,6 +34,6 @@ internal class Program
                 break;
         }
         Log.Debug($"Process took: {watch.Elapsed}");
-        //Console.ReadLine();
+        Console.ReadLine();
     }
 }
