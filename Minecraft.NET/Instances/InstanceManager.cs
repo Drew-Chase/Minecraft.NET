@@ -44,10 +44,17 @@ public class InstanceManager
     /// <returns>The created <see cref="InstanceModel"/> instance.</returns>
     public InstanceModel Create(InstanceModel instance)
     {
-        instance.InstanceManager = this;
-        instance.Path = Directory.CreateDirectory(Path.Combine(path, GetUniqueInstanceDirectoryName(instance.Name))).FullName;
-        Instances.Add(instance.Id, instance);
-        Save(instance.Id, instance);
+        try
+        {
+            instance.InstanceManager = this;
+            instance.Path = Directory.CreateDirectory(Path.Combine(path, GetUniqueInstanceDirectoryName(instance.Name))).FullName;
+            Instances.Add(instance.Id, instance);
+            Save(instance.Id, instance);
+        }
+        catch (Exception e)
+        {
+            Log.Error("Unable to create instance.", e);
+        }
         return instance;
     }
 
@@ -61,11 +68,18 @@ public class InstanceManager
     /// <returns>The saved <see cref="InstanceModel"/> instance.</returns>
     public InstanceModel Save(Guid id, InstanceModel instance)
     {
-        Log.Debug("Saving instance to file: {PATH}", Path.Combine(instance.Path, "instance.json"));
-        instance.InstanceManager = this;
-        instance.LastModified = DateTime.Now;
-        Instances[id] = instance;
-        File.WriteAllText(Path.Combine(instance.Path, "instance.json"), JsonConvert.SerializeObject(instance));
+        try
+        {
+            Log.Debug("Saving instance to file: {PATH}", Path.Combine(instance.Path, "instance.json"));
+            instance.InstanceManager = this;
+            instance.LastModified = DateTime.Now;
+            Instances[id] = instance;
+            File.WriteAllText(Path.Combine(instance.Path, "instance.json"), JsonConvert.SerializeObject(instance));
+        }
+        catch (Exception e)
+        {
+            Log.Error("Unable to save instance: {ID}", id, e);
+        }
         return instance;
     }
 
