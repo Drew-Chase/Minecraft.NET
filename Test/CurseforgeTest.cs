@@ -7,6 +7,7 @@
 
 using Chase.Minecraft.Curseforge.Controller;
 using Chase.Minecraft.Curseforge.Model;
+using Chase.Minecraft.Model;
 using Serilog;
 
 namespace Test;
@@ -15,11 +16,7 @@ internal static class CurseforgeTest
 {
     public static async Task Start()
     {
-        using CurseforgeClient client = new("$2a$10$qD2UJdpHaeDaQyGGaGS0QeoDnKq2EC7sX6YSjOxYHtDZSQRg04BCG");
-        await SearchMod(client);
-        await SearchModpack(client);
-        await SearchResourcepack(client);
-        await SearchWorlds(client);
+        await Overview();
     }
 
     private static async Task SearchMod(CurseforgeClient client)
@@ -60,10 +57,38 @@ internal static class CurseforgeTest
 
     private static async Task Overview()
     {
-        using CurseforgeClient client = new CurseforgeClient("api-key");
-        CurseforgeSearchResult? modpacks = await client.SearchModpackAsync("Skyblock", "1.19.4", Chase.Minecraft.ModLoaders.Fabric);
+        InstanceModel instance = new();
+        // Creates a Curseforge Client with an API-Key
+        using CurseforgeClient client = new CurseforgeClient("$2a$10$qD2UJdpHaeDaQyGGaGS0QeoDnKq2EC7sX6YSjOxYHtDZSQRg04BCG");
+
+        // Search for projects
+        CurseforgeSearchResult? modpacks = await client.SearchModpackAsync("All the Mods 6", "1.16.5", Chase.Minecraft.ModLoaders.Forge);
         CurseforgeSearchResult? mods = await client.SearchModsAsync("Warp", "1.19.4", Chase.Minecraft.ModLoaders.Fabric);
         CurseforgeSearchResult? worlds = await client.SearchWorldsAsync("OneBlock ", "1.19.4");
         CurseforgeSearchResult? resourcepacks = await client.SearchResourcepacksAsync("Faithful", "1.19.4");
+
+        // Get Individual Projects
+        CurseforgeProject? mod = await client.GetMod("887168");
+        CurseforgeProject? modpack = await client.GetModpack("887168");
+        CurseforgeProject? resourcepack = await client.GetResourcepack("887168");
+        CurseforgeProject? world = await client.GetWorld("887168");
+
+        // Get Project Files
+        ModFile[]? modFiles = await client.GetModFiles("887168");
+        ModFile[]? modpackFiles = await client.GetModpackFiles("887168");
+        ModFile[]? resourcepackFiles = await client.GetResourcepackFiles("887168");
+        ModFile[]? worldFiles = await client.GetWorldFiles("887168");
+
+        // Get Project Files
+        ModFile? modFile = await client.GetModFile("887168", "250");
+        ModFile? modpackFile = await client.GetModpackFile("887168", "250");
+        ModFile? resourcepackFile = await client.GetResourcepackFile("887168", "250");
+        ModFile? worldFile = await client.GetWorldFile("887168", "250");
+
+        // Downloads the file
+        await client.Download(modFile.Value, instance, "mods");
+        await client.Download(modpackFile.Value, "/path/to/modpacks/");
+        await client.Download(resourcepackFile.Value, instance, "resourcepack");
+        await client.Download(worldFile.Value, instance, "saves");
     }
 }
