@@ -9,11 +9,11 @@ using Newtonsoft.Json;
 
 namespace Chase.Minecraft.Curseforge.Model;
 
-public struct CurseforgeSearchResult
+public struct Dependency
 {
-    [JsonProperty("data")]
-    public CurseforgeProject[] Projects { get; set; }
+    [JsonProperty("modId")]
+    public int ModId { get; set; }
 
-    [JsonProperty("pagination")]
-    public CurseforgeSearchPagination Pagination { get; set; }
+    [JsonProperty("relationType")]
+    public int RelationType { get; set; }
 }
