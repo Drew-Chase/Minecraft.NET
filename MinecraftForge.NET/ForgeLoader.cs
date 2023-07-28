@@ -18,7 +18,7 @@ namespace Chase.Minecraft.Forge;
 
 public static class ForgeLoader
 {
-    public static async Task Install(string loader_version, InstanceModel instance)
+    public static async Task<InstanceModel?> Install(string loader_version, InstanceModel instance)
     {
         using NetworkClient client = new();
         string installerPath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
@@ -63,7 +63,10 @@ public static class ForgeLoader
             Task.WaitAll(tasks.ToArray());
 
             instance.InstanceManager.Save(instance.Id, instance);
+
+            return instance;
         }
+        return null;
     }
 
     public static async Task<string[]> GetLoaderVersions(string minecraft_version)
