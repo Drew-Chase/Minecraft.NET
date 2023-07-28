@@ -105,6 +105,7 @@ public class MinecraftClient : IDisposable
         _clientInfo.ClientName = clientName;
         _clientInfo.ClientVersion = clientVersion;
         _clientInfo.ClientRedirectUri = redirectUri;
+        SaveToCache();
     }
 
     /// <summary>
@@ -121,6 +122,7 @@ public class MinecraftClient : IDisposable
             {
                 Log.Debug("Authenticated user!");
                 _clientInfo.AuthenticationToken = token;
+                SaveToCache();
                 return true;
             }
         }
