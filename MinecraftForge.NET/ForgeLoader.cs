@@ -11,6 +11,7 @@ using Chase.Minecraft.Model;
 using Chase.Networking;
 using HtmlAgilityPack;
 using Newtonsoft.Json;
+using Serilog;
 using System.IO.Compression;
 
 namespace Chase.Minecraft.Forge;
@@ -26,14 +27,14 @@ public static class ForgeLoader
 
         string jsonFileName = "version.json";
         ForgeVersionInfo info = new();
-        using (var archive = ZipFile.OpenRead(installerPath))
+        using (ZipArchive archive = ZipFile.OpenRead(installerPath))
         {
-            foreach (var entry in archive.Entries)
+            foreach (ZipArchiveEntry entry in archive.Entries)
             {
                 if (entry.FullName.Equals(jsonFileName, StringComparison.OrdinalIgnoreCase))
                 {
-                    using var stream = entry.Open();
-                    using var reader = new StreamReader(stream);
+                    using Stream stream = entry.Open();
+                    using StreamReader reader = new(stream);
                     string jsonContent = reader.ReadToEnd();
                     info = JsonConvert.DeserializeObject<ForgeVersionInfo>(jsonContent);
                 }
@@ -43,6 +44,11 @@ public static class ForgeLoader
         {
             instance.MinecraftArguments = info.Arguments.Game;
             instance.JVMArguments = info.Arguments.Jvm.Select(i => i.Replace("${library_directory}", Path.Combine(instance.Path, "libraries")).Replace("${classpath_separator}", ";").Replace("${version_name}", info.Id)).ToArray();
+            instance.ModLoader = new()
+            {
+                Modloader = ModLoaders.Forge,
+                Version = loader_version
+            };
 
             List<Task> tasks = new();
             foreach (ForgeLibrary libraryItem in info.Libraries)
@@ -50,9 +56,13 @@ public static class ForgeLoader
                 ForgeArtifact artifact = libraryItem.Downloads.Artifact;
                 Uri artifactUri = artifact.Url;
                 string artifactPath = Path.Combine(Path.Combine(instance.Path, "libraries"), artifact.Path);
+                Directory.CreateDirectory(Directory.GetParent(artifactPath)?.FullName ?? "");
+                Log.Debug($"[Forge] Downloading {artifact.Path}");
                 tasks.Add(client.DownloadFileAsync(artifactUri, artifactPath, (_, _) => { }));
             }
             Task.WaitAll(tasks.ToArray());
+
+            instance.InstanceManager.Save(instance.Id, instance);
         }
     }
 
