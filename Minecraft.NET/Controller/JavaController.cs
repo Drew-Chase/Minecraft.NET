@@ -45,6 +45,7 @@ public static class JavaController
     /// </returns>
     public static JVMInstallations GetLocalJVMInstallations(string path)
     {
+        path = Path.GetFullPath(path);
         string latest = Path.Combine(path, "java-latest", "bin", "java.exe");
         string legacy = Path.Combine(path, "java-legacy", "bin", "java.exe");
         JVMInstallations installations = new()
@@ -201,13 +202,14 @@ public static class JavaController
                 {
                     try
                     {
-                        Log.Debug($"Downloading {item.Name}");
+                        Log.Debug($"[JAVA] Downloading {item.Name}");
                         tasks.Add(client.DownloadFileAsync(url, filepath, progressEvent));
                     }
                     catch { }
                 }
             }
             Task.WaitAll(tasks.ToArray());
+            Log.Debug("Done downloading java...");
         }
     }
 }
