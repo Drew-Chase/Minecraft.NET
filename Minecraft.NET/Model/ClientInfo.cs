@@ -14,6 +14,7 @@ internal sealed class ClientInfo
     public string LibrariesPath { get; set; }
     public string AuthenticationToken { get; set; } = "0";
     public string ClientID { get; set; } = "0";
+    public Uri ClientRedirectUri { get; set; }
     public string ClientVersion { get; set; } = "0.0.0";
     public string ClientName { get; set; } = "Minecraft.NET";
     public DownloadArtifact[] LibraryFiles { get; set; }
