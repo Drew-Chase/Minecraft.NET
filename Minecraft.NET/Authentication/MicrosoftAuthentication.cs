@@ -19,32 +19,29 @@ using System.Web;
 
 namespace Chase.Minecraft.Authentication;
 
-internal class MicrosoftAuthentication : IDisposable
+/// <summary>
+/// Provides methods for authenticating with Microsoft services to obtain a Minecraft bearer access token.
+/// </summary>
+public static class MicrosoftAuthentication
 {
-    private readonly string redirectUri;
-    private readonly string clientId;
-    private readonly string authenticationFile;
-    private readonly NetworkClient client;
-
-    public MicrosoftAuthentication(string clientId, string redirectUri, string authenticationFile = "msa-auth.json")
+    /// <summary>
+    /// Retrieves a Minecraft bearer access token by authenticating with Microsoft services.
+    /// </summary>
+    /// <param name="clientId">The client ID used for authentication.</param>
+    /// <param name="redirectUri">The redirect URI used for authentication.</param>
+    /// <param name="authenticationFile">
+    /// The file to store authentication information (optional, defaults to "msa-auth.json").
+    /// </param>
+    /// <returns>
+    /// The Minecraft bearer access token if authentication is successful; otherwise, null.
+    /// </returns>
+    public static async Task<string?> GetMinecraftBearerAccessToken(string clientId, string redirectUri, string authenticationFile = "msa-auth.json")
     {
-        client = new();
-        this.clientId = clientId;
-        this.authenticationFile = authenticationFile;
-        this.redirectUri = redirectUri;
-    }
-
-    public void Dispose()
-    {
-        client.Dispose();
-    }
-
-    public async Task<string?> GetMinecraftBearerAccessToken()
-    {
-        XboxLiveAuthResponse? xboxLiveAuthResponse = await GetXboxLiveAuthResponseAsync();
+        using NetworkClient client = new();
+        XboxLiveAuthResponse? xboxLiveAuthResponse = await GetXboxLiveAuthResponseAsync(client, authenticationFile, clientId, redirectUri);
         if (xboxLiveAuthResponse == null) { return null; }
 
-        string? xsts = await GetXSTSToken(xboxLiveAuthResponse);
+        string? xsts = await GetXSTSToken(client, xboxLiveAuthResponse);
         if (xsts != null)
         {
             string json = JsonConvert.SerializeObject(new
@@ -75,7 +72,36 @@ internal class MicrosoftAuthentication : IDisposable
         return null;
     }
 
-    private async Task<string?> GetXSTSToken(XboxLiveAuthResponse? xboxLiveAuth)
+    private static string GenerateCodeVerifier()
+    {
+        const string allowedChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._~";
+        var random = new Random();
+        var codeVerifier = new StringBuilder(128);
+
+        for (int i = 0; i < 128; i++)
+        {
+            int randomIndex = random.Next(allowedChars.Length);
+            char randomChar = allowedChars[randomIndex];
+            codeVerifier.Append(randomChar);
+        }
+
+        return codeVerifier.ToString();
+    }
+
+    private static string GenerateCodeChallenge(string codeVerifier)
+    {
+        using var sha256 = SHA256.Create();
+        byte[] codeVerifierBytes = Encoding.ASCII.GetBytes(codeVerifier);
+        byte[] codeChallengeBytes = sha256.ComputeHash(codeVerifierBytes);
+        string codeChallenge = Convert.ToBase64String(codeChallengeBytes)
+            .TrimEnd('=')
+            .Replace('+', '-')
+            .Replace('/', '_');
+
+        return codeChallenge;
+    }
+
+    private static async Task<string?> GetXSTSToken(NetworkClient client, XboxLiveAuthResponse? xboxLiveAuth)
     {
         if (xboxLiveAuth != null)
         {
@@ -112,9 +138,9 @@ internal class MicrosoftAuthentication : IDisposable
         return null;
     }
 
-    private async Task<XboxLiveAuthResponse?> GetXboxLiveAuthResponseAsync()
+    private static async Task<XboxLiveAuthResponse?> GetXboxLiveAuthResponseAsync(NetworkClient client, string authenticationFile, string clientId, string redirectUri)
     {
-        MicrosoftToken? microsoftToken = await GetMicrosoftAccessToken();
+        MicrosoftToken? microsoftToken = await GetMicrosoftAccessToken(client, authenticationFile, clientId, redirectUri);
         if (microsoftToken != null)
         {
             using HttpRequestMessage request = new()
@@ -150,7 +176,7 @@ internal class MicrosoftAuthentication : IDisposable
         return null;
     }
 
-    private async Task<MicrosoftToken?> GetMicrosoftAccessToken()
+    private static async Task<MicrosoftToken?> GetMicrosoftAccessToken(NetworkClient client, string authenticationFile, string clientId, string redirectUri)
     {
         string codeVerifier = GenerateCodeVerifier();
         string codeChallenge = GenerateCodeChallenge(codeVerifier);
@@ -158,7 +184,7 @@ internal class MicrosoftAuthentication : IDisposable
         {
             try
             {
-                MicrosoftToken? token = await RefreshMicrosoftAccessToken();
+                MicrosoftToken? token = await RefreshMicrosoftAccessToken(client, authenticationFile, clientId, redirectUri);
                 if (token != null)
                 {
                     return token;
@@ -166,7 +192,7 @@ internal class MicrosoftAuthentication : IDisposable
             }
             catch { }
         }
-        string? code = GetAuthenticationCodeFromBrowser(codeChallenge);
+        string? code = GetAuthenticationCodeFromBrowser(codeChallenge, clientId, redirectUri);
         if (code != null)
         {
             HttpRequestMessage request = new()
@@ -198,7 +224,7 @@ internal class MicrosoftAuthentication : IDisposable
         return null;
     }
 
-    private async Task<MicrosoftToken?> RefreshMicrosoftAccessToken()
+    private static async Task<MicrosoftToken?> RefreshMicrosoftAccessToken(NetworkClient client, string authenticationFile, string clientId, string redirectUri)
     {
         MicrosoftToken token;
         using (StreamReader reader = File.OpenText(authenticationFile))
@@ -230,7 +256,7 @@ internal class MicrosoftAuthentication : IDisposable
         return null;
     }
 
-    private string? GetAuthenticationCodeFromBrowser(string challengeCode)
+    private static string? GetAuthenticationCodeFromBrowser(string challengeCode, string clientId, string redirectUri)
     {
         string url = $"https://login.live.com/oauth20_authorize.srf?client_id={clientId}&response_type=code&redirect_uri={redirectUri}&scope=XboxLive.signin%20offline_access&state=NOT_NEEDED&cobrandid=8058f65d-ce06-4c30-9559-473c9275a65d&prompt=select_account&code_challenge={challengeCode}&code_challenge_method=S256";
 
@@ -251,34 +277,5 @@ internal class MicrosoftAuthentication : IDisposable
         }
 
         return null;
-    }
-
-    private string GenerateCodeVerifier()
-    {
-        const string allowedChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._~";
-        var random = new Random();
-        var codeVerifier = new StringBuilder(128);
-
-        for (int i = 0; i < 128; i++)
-        {
-            int randomIndex = random.Next(allowedChars.Length);
-            char randomChar = allowedChars[randomIndex];
-            codeVerifier.Append(randomChar);
-        }
-
-        return codeVerifier.ToString();
-    }
-
-    private string GenerateCodeChallenge(string codeVerifier)
-    {
-        using var sha256 = SHA256.Create();
-        byte[] codeVerifierBytes = Encoding.ASCII.GetBytes(codeVerifier);
-        byte[] codeChallengeBytes = sha256.ComputeHash(codeVerifierBytes);
-        string codeChallenge = Convert.ToBase64String(codeChallengeBytes)
-            .TrimEnd('=')
-            .Replace('+', '-')
-            .Replace('/', '_');
-
-        return codeChallenge;
     }
 }
