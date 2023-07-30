@@ -122,6 +122,11 @@ public class MinecraftClient : IDisposable
             {
                 Log.Debug("Authenticated user!");
                 _clientInfo.AuthenticationToken = token;
+                UserProfile? profile = await MicrosoftAuthentication.GetUserProfile(token);
+                if (profile != null)
+                {
+                    _clientInfo.UUID = profile.Value.Id;
+                }
                 SaveToCache();
                 return true;
             }
@@ -178,6 +183,7 @@ public class MinecraftClient : IDisposable
     {
         _clientInfo.LibrariesPath = Directory.CreateDirectory(Path.Combine(rootDirectory, "libraries")).FullName;
         _clientInfo.LibraryFiles = (await _client.GetAsJson(instance.MinecraftVersion.URL.ToString()))?["libraries"]?.ToObject<DownloadArtifact[]>() ?? Array.Empty<DownloadArtifact>();
+        SaveToCache();
         if (ValidateLibraries() && !force)
         {
             return;
@@ -193,7 +199,6 @@ public class MinecraftClient : IDisposable
         }
         Task.WaitAll(tasks.ToArray());
         Log.Debug("Libraries Download Completed!");
-        SaveToCache();
     }
 
     /// <summary>
@@ -277,6 +282,7 @@ public class MinecraftClient : IDisposable
         string indexesPath = Directory.CreateDirectory(Path.Combine(_clientInfo.Assets, "indexes")).FullName;
         if (ValidateAssets() && !force)
         {
+            SaveToCache();
             return;
         }
         if (!string.IsNullOrWhiteSpace(url) && !string.IsNullOrWhiteSpace(index))
@@ -412,7 +418,7 @@ public class MinecraftClient : IDisposable
         {
             string natives = Directory.CreateDirectory(Path.Combine(rootDirectory, "natives", instance.MinecraftVersion.ID)).FullName;
 
-            string jvm = $"{string.Join(" ", instance.JVMArguments)} " +
+            string jvm =
                 $"-Xmx{instance.RAM.MaximumRamMB}M " +
                 $"-Xms{instance.RAM.MinimumRamMB}M " +
                 $"-XX:HeapDumpPath=MojangTricksIntelDriversForPerformance_javaw.exe_minecraft.exe.heapdump " +
@@ -421,9 +427,11 @@ public class MinecraftClient : IDisposable
                 $"-Dio.netty.native.workdir=\"{natives}\" " +
                 $"-Dminecraft.launcher.brand=\"{_clientInfo.ClientName}\" " +
                 $"-Dminecraft.launcher.version=\"{_clientInfo.ClientVersion}\" " +
-                $"-cp \"{classPaths};{string.Join(";", instance.AdditionalClassPaths)};{instance.ClientJar}\" ";
+                $"-cp \"{classPaths};{string.Join(";", instance.AdditionalClassPaths)};{instance.ClientJar}\" " +
+                $"{string.Join(" ", instance.JVMArguments)}";
 
             string minecraftArgs = $"{string.Join(" ", instance.MinecraftArguments)} " +
+                $"--uuid {_clientInfo.UUID} " +
                 $"--username {Username} " +
                 $"--version {instance.MinecraftVersion.ID} " +
                 $"--gameDir \"{instance.Path}\" " +
@@ -432,7 +440,7 @@ public class MinecraftClient : IDisposable
                 $"--accessToken {_clientInfo.AuthenticationToken} " +
                 $"--clientId {_clientInfo.ClientID} " +
                 $"--width {instance.WindowWidth} " +
-                $"--height {instance.WindowHeight}";
+                $"--height {instance.WindowHeight} --userType msa";
 
             cmd = $"{jvm} {instance.LaunchClassPath} {minecraftArgs}";
         }
