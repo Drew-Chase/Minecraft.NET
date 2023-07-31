@@ -17,6 +17,7 @@ public sealed class InstanceModel
     public string Description { get; set; }
     public string Path { get; set; }
     public string? Image { get; set; } = null;
+    public string GameVersion { get; set; }
     public string Java { get; set; }
     public string[] JVMArguments { get; set; } = Array.Empty<string>();
     public string[] MinecraftArguments { get; set; } = Array.Empty<string>();
@@ -34,4 +35,6 @@ public sealed class InstanceModel
 
     [JsonIgnore]
     public InstanceManager InstanceManager { get; set; }
+
+    public string[] ClassPaths { get; set; }
 }
