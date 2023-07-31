@@ -9,7 +9,9 @@ using Chase.Minecraft.Data;
 using Chase.Minecraft.Model;
 using Chase.Networking;
 using HtmlAgilityPack;
+using Newtonsoft.Json.Linq;
 using System.Diagnostics;
+using System.IO.Compression;
 
 namespace Chase.Minecraft.Fabric;
 
@@ -20,6 +22,21 @@ public static class FabricLoader
 {
     private static readonly string MavenURL = "https://maven.fabricmc.net";
     private static readonly string MavenInstallerPath = "/net/fabricmc/fabric-installer/";
+
+    public static FabricModJson? GetLoaderFile(string jar)
+    {
+        using ZipArchive archive = ZipFile.OpenRead(jar);
+        foreach (ZipArchiveEntry entry in archive.Entries)
+        {
+            if (entry.FullName.Equals("fabric.mod.json", StringComparison.OrdinalIgnoreCase))
+            {
+                using Stream stream = entry.Open();
+                using StreamReader reader = new(stream);
+                return JObject.Parse(reader.ReadToEnd()).ToObject<FabricModJson>();
+            }
+        }
+        return null;
+    }
 
     /// <summary>
     /// Install the specified version of Fabric modloader for the given Minecraft instance.
