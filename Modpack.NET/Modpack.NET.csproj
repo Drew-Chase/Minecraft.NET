@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Chase.Minecraft.Modpacks</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\CurseForge.NET\CurseForge.NET.csproj" />
+    <ProjectReference Include="..\Minecraft.NET\Minecraft.NET.csproj" />
+    <ProjectReference Include="..\MinecraftFabric.NET\MinecraftFabric.NET.csproj" />
+    <ProjectReference Include="..\MinecraftForge.NET\MinecraftForge.NET.csproj" />
+    <ProjectReference Include="..\Modrinth.NET\Modrinth.NET.csproj" />
+  </ItemGroup>
+
+</Project>
