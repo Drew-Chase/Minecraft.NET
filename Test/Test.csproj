@@ -12,6 +12,7 @@
     <ProjectReference Include="..\Minecraft.NET\Minecraft.NET.csproj" />
     <ProjectReference Include="..\MinecraftFabric.NET\MinecraftFabric.NET.csproj" />
     <ProjectReference Include="..\MinecraftForge.NET\MinecraftForge.NET.csproj" />
+    <ProjectReference Include="..\Modpack.NET\Modpack.NET.csproj" />
     <ProjectReference Include="..\Modrinth.NET\Modrinth.NET.csproj" />
   </ItemGroup>
 

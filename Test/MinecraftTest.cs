@@ -5,11 +5,13 @@
     https://www.gnu.org/licenses/gpl-3.0.en.html#license-text
 */
 
+using Chase.Minecraft;
 using Chase.Minecraft.Controller;
 using Chase.Minecraft.Fabric;
 using Chase.Minecraft.Forge;
 using Chase.Minecraft.Instances;
 using Chase.Minecraft.Model;
+using Chase.Minecraft.Modrinth.Controller;
 using Serilog;
 using System.Diagnostics;
 
@@ -76,11 +78,22 @@ internal static class MinecraftTest
 
         string latestSnapshot = minecraftVersionManifest.Latest.Snapshot; // The latest Minecraft Snapshot Version as a string
         string latestMinecraftVerson = minecraftVersionManifest.Latest.Release; // The latest Minecraft Version as a string
+        latestMinecraftVerson = "1.20.1";
 
         MinecraftVersion latestVersion = MinecraftVersionController.GetMinecraftVersionByName(latestMinecraftVerson).Value; // Creates a MinecraftVersion object based on the version string
         instance.MinecraftVersion = latestVersion; // This sets the minecraft version to the latest
         manager.Save(instance.Id, instance); // This saves the instance to file
         instance.InstanceManager.Save(instance.Id, instance); // This gets the instance manager from the instance and saves it to file.
+
+        using (ModrinthClient modrinthClient = new())
+        {
+            Chase.Minecraft.Modrinth.Model.ModrinthVersionFile[]? bfversions = modrinthClient.GetProjectVersions("8shC1gFX");
+            if (bfversions != null)
+            {
+                Chase.Minecraft.Modrinth.Model.ModrinthVersionFile bfVersion = bfversions.First(i => i.Loaders.Contains(ModLoaders.Forge.ToString().ToLower()) && (i.GameVersions.Contains("1.20.1") || i.GameVersions.Contains("1.20")));
+                await modrinthClient.DownloadVersionFile(bfVersion.Files.First(), instance);
+            }
+        }
 
         using MinecraftClient client = new MinecraftClient("dcman58", "./minecraft", instance);  // Creates a minecraft client based on the instance with an offline user
 
@@ -90,13 +103,13 @@ internal static class MinecraftTest
 
         // Downloads the clients resources. This is done automatically when you run the client. or
         // you can do it manually.
-        await client.DownloadLibraries(); // This downloads the clients libraries
-        await client.DownloadAssets(); // This will download any assets needed for minecraft.
-        await client.DownloadClient(); // This will download the client jar.
+        //await client.DownloadLibraries(); // This downloads the clients libraries
+        //await client.DownloadAssets(); // This will download any assets needed for minecraft.
+        //await client.DownloadClient(); // This will download the client jar.
 
         // Gets the latest loader and installs it
-        string[] loader_versions = await ForgeLoader.GetLoaderVersions("1.20.1"); // This gets an array of all fabric loader versions
-        instance = await ForgeLoader.Install(loader_versions.First(), instance) ?? instance; // Downloads and installs the specified fabric loader version to the specified instance
+        string[] loader_versions = await ForgeLoader.GetLoaderVersions(latestMinecraftVerson); // This gets an array of all fabric loader versions
+        //instance = await ForgeLoader.Install(loader_versions.First(), instance, Path.GetFullPath("./minecraft"), JavaController.GetLocalJVMInstallations("./java").Latest) ?? instance; // Downloads and installs the specified fabric loader version to the specified instance
 
         DataReceivedEventHandler outputHandler = (s, e) =>
         {
@@ -121,6 +134,6 @@ internal static class MinecraftTest
     {
         // Gets the latest loader and installs it
         string[] loader_versions = await ForgeLoader.GetLoaderVersions("1.20.1"); // This gets an array of all fabric loader versions
-        await ForgeLoader.Install(loader_versions.First(), instance); // Downloads and installs the specified fabric loader version to the specified instance
+        await ForgeLoader.Install(loader_versions.First(), instance, Path.GetFullPath("./minecraft"), JavaController.GetLocalJVMInstallations("./java").Latest); // Downloads and installs the specified fabric loader version to the specified instance
     }
 }
