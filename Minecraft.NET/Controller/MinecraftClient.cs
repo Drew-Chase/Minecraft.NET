@@ -14,6 +14,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Serilog;
 using System.Diagnostics;
+using OperatingSystem = System.OperatingSystem;
 
 namespace Chase.Minecraft.Controller;
 
@@ -181,24 +182,50 @@ public class MinecraftClient : IDisposable
     /// <returns>A Task that represents the asynchronous operation.</returns>
     public async Task DownloadLibraries(bool force = false)
     {
-        _clientInfo.LibrariesPath = Directory.CreateDirectory(Path.Combine(rootDirectory, "libraries")).FullName;
-        _clientInfo.LibraryFiles = (await _client.GetAsJson(instance.MinecraftVersion.URL.ToString()))?["libraries"]?.ToObject<DownloadArtifact[]>() ?? Array.Empty<DownloadArtifact>();
-        SaveToCache();
-        if (ValidateLibraries() && !force)
+        try
         {
-            return;
+            _clientInfo.LibrariesPath = Directory.CreateDirectory(Path.Combine(rootDirectory, "libraries")).FullName;
+            _clientInfo.LibraryFiles = (await _client.GetAsJson(instance.MinecraftVersion.URL.ToString()))?["libraries"]?.ToObject<DownloadArtifact[]>() ?? Array.Empty<DownloadArtifact>();
+            SaveToCache();
+            if (ValidateLibraries() && !force)
+            {
+                return;
+            }
+            List<Task> tasks = new();
+            List<string> paths = new();
+            foreach (DownloadArtifact artifact in _clientInfo.LibraryFiles)
+            {
+                bool ok = true;
+                if (artifact.Rules != null && artifact.Rules.Any())
+                {
+                    foreach (Rule rule in artifact.Rules)
+                    {
+                        if (!OperatingSystem.IsOSPlatform(rule.OS.Name))
+                        {
+                            ok = false;
+                            break;
+                        }
+                    }
+                }
+                if (ok)
+                {
+                    string absolutePath = Path.Combine(_clientInfo.LibrariesPath, artifact.Downloads.Artifact.Path);
+                    string filename = absolutePath.Split('/').Last();
+                    Log.Debug($"[Libraries] Downloading '{artifact.Downloads.Artifact.Path}'");
+                    paths.Add(absolutePath);
+                    string directory = Directory.CreateDirectory(Directory.GetParent(absolutePath)?.FullName ?? "").FullName;
+                    tasks.Add(_client.DownloadFileAsync(new Uri(artifact.Downloads.Artifact.Url), absolutePath, (s, e) => { }));
+                }
+            }
+            Task.WaitAll(tasks.ToArray());
+            instance.ClassPaths = paths.ToArray();
+            instance = instance.InstanceManager.Save(instance.Id, instance);
+            Log.Debug("Libraries Download Completed!");
         }
-        List<Task> tasks = new();
-        foreach (DownloadArtifact artifact in _clientInfo.LibraryFiles)
+        catch (Exception ex)
         {
-            string absolutePath = Path.Combine(_clientInfo.LibrariesPath, artifact.Downloads.Artifact.Path);
-            string filename = absolutePath.Split('/').Last();
-            Log.Debug($"[Libraries] Downloading '{artifact.Downloads.Artifact.Path}'");
-            string directory = Directory.CreateDirectory(Directory.GetParent(absolutePath)?.FullName ?? "").FullName;
-            tasks.Add(_client.DownloadFileAsync(new Uri(artifact.Downloads.Artifact.Url), absolutePath, (s, e) => { }));
+            Log.Error("Unable to download library files: {MSG}", ex.Message, ex);
         }
-        Task.WaitAll(tasks.ToArray());
-        Log.Debug("Libraries Download Completed!");
     }
 
     /// <summary>
@@ -233,7 +260,7 @@ public class MinecraftClient : IDisposable
         if (url != null)
         {
             progressEvent ??= (s, e) => { };
-            instance.ClientJar = Path.Combine(Directory.CreateDirectory(Path.Combine(rootDirectory, "versions", instance.MinecraftVersion.ID)).FullName, "client.jar");
+            instance.ClientJar = Path.Combine(Directory.CreateDirectory(Path.Combine(rootDirectory, "versions", instance.MinecraftVersion.ID)).FullName, $"{instance.MinecraftVersion.ID}.jar");
             await _client.DownloadFileAsync(url, instance.ClientJar, progressEvent);
         }
         SaveToCache();
@@ -359,10 +386,10 @@ public class MinecraftClient : IDisposable
 
     private bool ValidateClient()
     {
-        string clientJar = Path.Combine(rootDirectory, "versions", instance.MinecraftVersion.ID, "client.jar");
+        string clientJar = Path.Combine(rootDirectory, "versions", instance.MinecraftVersion.ID, $"{instance.MinecraftVersion.ID}.jar");
         if (File.Exists(clientJar))
         {
-            if (instance.ClientJar != clientJar)
+            if (!File.Exists(instance.ClientJar))
             {
                 instance.ClientJar = clientJar;
                 instance.InstanceManager.Save(instance.Id, instance);
@@ -412,8 +439,13 @@ public class MinecraftClient : IDisposable
     private string BuildJavaCommand()
     {
         string cmd = "";
-        string classPaths = string.Join(';', Directory.GetFiles(_clientInfo.LibrariesPath, "*.jar", SearchOption.AllDirectories));
-        instance.InstanceManager.Load(instance.Path);
+        string classPaths = string.Join(';', instance.ClassPaths);
+        string gameVersion = string.IsNullOrWhiteSpace(instance.GameVersion) ? instance.MinecraftVersion.ID : instance.GameVersion;
+        if (instance.ModLoader.Modloader == ModLoaders.Forge)
+        {
+            instance.ClientJar = Path.Combine(rootDirectory, "versions", $"{instance.MinecraftVersion.ID}-{instance.ModLoader.Version}", $"{instance.MinecraftVersion.ID}-{instance.ModLoader.Version}.jar");
+            instance.InstanceManager.Save(instance.Id, instance);
+        }
         try
         {
             string natives = Directory.CreateDirectory(Path.Combine(rootDirectory, "natives", instance.MinecraftVersion.ID)).FullName;
@@ -433,7 +465,7 @@ public class MinecraftClient : IDisposable
             string minecraftArgs = $"{string.Join(" ", instance.MinecraftArguments)} " +
                 $"--uuid {_clientInfo.UUID} " +
                 $"--username {Username} " +
-                $"--version {instance.MinecraftVersion.ID} " +
+                $"--version {gameVersion} " +
                 $"--gameDir \"{instance.Path}\" " +
                 $"--assetsDir \"{_clientInfo.Assets}\" " +
                 $"--assetIndex {_clientInfo.AssetIndex} " +
