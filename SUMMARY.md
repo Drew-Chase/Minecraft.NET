@@ -1,7 +1,7 @@
 # Table of contents
 
 * [Minecraft.NET](README.md)
-  * [CurseForge.NET](README/CurseForge.NET.md)
-  * [Minecraft.NET](README/Minecraft.NET.md)
-  * [MinecraftFabric.NET](README/MinecraftFabric.NET.md)
-  * [Modrinth.NET](README/Modrinth.NET.md)
+  * [CurseForge.NET](minecraft.net/curseforge.net.md)
+  * [Minecraft.NET](minecraft.net/minecraft.net.md)
+  * [MinecraftFabric.NET](minecraft.net/minecraftfabric.net.md)
+  * [Modrinth.NET](minecraft.net/modrinth.net.md)
