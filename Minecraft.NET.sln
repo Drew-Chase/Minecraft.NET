@@ -3,17 +3,19 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.6.33829.357
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Modrinth.NET", "Modrinth.NET\Modrinth.NET.csproj", "{549A0071-9326-4EF4-A37C-0191B4AD1703}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Modrinth.NET", "Modrinth.NET\Modrinth.NET.csproj", "{549A0071-9326-4EF4-A37C-0191B4AD1703}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CurseForge.NET", "CurseForge.NET\CurseForge.NET.csproj", "{925523E0-76A5-4FE1-9D45-CCC52DBA5BF4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CurseForge.NET", "CurseForge.NET\CurseForge.NET.csproj", "{925523E0-76A5-4FE1-9D45-CCC52DBA5BF4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Minecraft.NET", "Minecraft.NET\Minecraft.NET.csproj", "{8DD1C12C-1695-4456-96E3-60BC8ECA7D10}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Minecraft.NET", "Minecraft.NET\Minecraft.NET.csproj", "{8DD1C12C-1695-4456-96E3-60BC8ECA7D10}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MinecraftForge.NET", "MinecraftForge.NET\MinecraftForge.NET.csproj", "{80BCEC2D-65F7-4C89-AC6B-0C9C3DE07EB5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MinecraftForge.NET", "MinecraftForge.NET\MinecraftForge.NET.csproj", "{80BCEC2D-65F7-4C89-AC6B-0C9C3DE07EB5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MinecraftFabric.NET", "MinecraftFabric.NET\MinecraftFabric.NET.csproj", "{C8C897C9-6B95-4CE3-8AA0-41741E0B0B53}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MinecraftFabric.NET", "MinecraftFabric.NET\MinecraftFabric.NET.csproj", "{C8C897C9-6B95-4CE3-8AA0-41741E0B0B53}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test", "Test\Test.csproj", "{A2544B0F-618C-4F4A-8EB4-9CB973D94B8F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Test", "Test\Test.csproj", "{A2544B0F-618C-4F4A-8EB4-9CB973D94B8F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Modpack.NET", "Modpack.NET\Modpack.NET.csproj", "{E372C5F4-1335-4A53-8DEB-F79B8D8FE4D8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -45,6 +47,10 @@ Global
 		{A2544B0F-618C-4F4A-8EB4-9CB973D94B8F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A2544B0F-618C-4F4A-8EB4-9CB973D94B8F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A2544B0F-618C-4F4A-8EB4-9CB973D94B8F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E372C5F4-1335-4A53-8DEB-F79B8D8FE4D8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E372C5F4-1335-4A53-8DEB-F79B8D8FE4D8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E372C5F4-1335-4A53-8DEB-F79B8D8FE4D8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E372C5F4-1335-4A53-8DEB-F79B8D8FE4D8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
