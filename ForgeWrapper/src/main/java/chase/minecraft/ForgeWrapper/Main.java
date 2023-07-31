@@ -34,10 +34,18 @@ public class Main
 			} else if (cmd.hasOption('i') && cmd.hasOption('o'))
 			{
 				boolean verbose = cmd.hasOption('v');
-				String input = cmd.getOptionValue('i');
-				String output = cmd.getOptionValue('o');
-				Main.installer = Path.of(input).toFile();
-				Installer installer = new Installer(Main.installer, Path.of(output).toFile(), verbose);
+				Main.installer = Path.of(cmd.getOptionValue('i')).toFile();
+				File output = Path.of(cmd.getOptionValue('o')).toFile();
+				if (output.mkdirs())
+				{
+					System.out.printf("Creating output directory: %s\n", output);
+				}
+				if (!Main.installer.exists())
+				{
+					System.err.printf("Installer file not found: %s\n", Main.installer);
+					System.exit(1);
+				}
+				Installer installer = new Installer(Main.installer, output, verbose);
 				installer.install();
 			}
 		} catch (ParseException e)
