@@ -8,8 +8,17 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="jars\ForgeWrapper.jar" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="jars\ForgeWrapper.jar" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Chase.Networking" Version="0.0.3" />
     <PackageReference Include="HtmlAgilityPack" Version="1.11.50" />
+    <PackageReference Include="Nett" Version="0.15.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
 
