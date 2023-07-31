@@ -13,7 +13,7 @@
     <Description>A simple library for handling Modrinth API library.</Description>
     <PackageProjectUrl>https://docs.lfinteractive.net/csharp/minecraft.net/modrinth.net-library</PackageProjectUrl>
     <RepositoryUrl>https://github.com/DcmanProductions/Minecraft.NET</RepositoryUrl>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageReadmeFile>Modrinth.NET.md</PackageReadmeFile>
     <PackageIcon>Modrinth.jpg</PackageIcon>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
   </PropertyGroup>
@@ -24,6 +24,10 @@
       <PackagePath>\</PackagePath>
     </None>
     <None Include="..\LICENSE">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Include="..\README\Modrinth.NET.md">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>

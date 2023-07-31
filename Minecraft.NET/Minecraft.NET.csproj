@@ -10,7 +10,7 @@
     <Version>0.0.1</Version>
     <Company>LFInteractive</Company>
     <Authors>Drew Chase</Authors>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageReadmeFile>Minecraft.NET.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/DcmanProductions/Minecraft.NET</RepositoryUrl>
     <Description>A library minecraft.</Description>
     <PackageTags>minecraft;networking;utilities;gaming;xbox</PackageTags>
@@ -35,7 +35,7 @@
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
-    <None Include="..\README.md">
+    <None Include="..\README\Minecraft.NET.md">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>

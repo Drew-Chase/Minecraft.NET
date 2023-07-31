@@ -12,7 +12,7 @@
     <Description>A simple library that </Description>
     <RepositoryUrl>https://github.com/DcmanProductions/Minecraft.NET</RepositoryUrl>
     <PackageProjectUrl>https://docs.lfinteractive.net/csharp/minecraft.net/curseforge.net-library</PackageProjectUrl>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageReadmeFile>CurseForge.NET.md</PackageReadmeFile>
     <PackageIcon>CurseForge.jpg</PackageIcon>
     <AssemblyVersion>0.0.1</AssemblyVersion>
     <Copyright>Protected under GNU General Public License v3.0</Copyright>
@@ -27,6 +27,10 @@
       <PackagePath>\</PackagePath>
     </None>
     <None Include="..\LICENSE">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Include="..\README\CurseForge.NET.md">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
