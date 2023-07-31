@@ -5,7 +5,31 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>Chase.Minecraft.Fabric</RootNamespace>
+    <GenerateDocumentationFile>True</GenerateDocumentationFile>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <Version>0.0.1</Version>
+    <Authors>Drew Chase</Authors>
+    <Company>LFInteractive LLC.</Company>
+    <Description>A library for handling fabric installations</Description>
+    <Copyright>GNU General Public License v3.0</Copyright>
+    <PackageProjectUrl>https://docs.lfinteractive.net/csharp/minecraft.net/fabric.net-library</PackageProjectUrl>
+    <PackageIcon>Fabric.jpg</PackageIcon>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/DcmanProductions/Minecraft.NET</RepositoryUrl>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <Title>FabricMC API Library</Title>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\Icons\Fabric.jpg">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Include="..\LICENSE">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Chase.Networking" Version="0.0.3" />
@@ -15,6 +39,13 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Minecraft.NET\Minecraft.NET.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
   </ItemGroup>
 
 </Project>

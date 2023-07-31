@@ -5,6 +5,17 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>Chase.Minecraft.Forge</RootNamespace>
+    <GenerateDocumentationFile>True</GenerateDocumentationFile>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <Title>Minecraft Forge API Library</Title>
+    <Version>0.0.1</Version>
+    <Authors>Drew Chase</Authors>
+    <Company>LFInteractive LLC.</Company>
+    <Description>A simple library handling miencraft forge installations</Description>
+    <PackageProjectUrl>https://docs.lfinteractive.net/csharp/minecraft.net/forge.net-library</PackageProjectUrl>
+    <PackageIcon>Forge.jpg</PackageIcon>
+    <RepositoryUrl>https://github.com/DcmanProductions/Minecraft.NET</RepositoryUrl>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
   </PropertyGroup>
 
   <ItemGroup>
@@ -13,6 +24,17 @@
 
   <ItemGroup>
     <EmbeddedResource Include="jars\ForgeWrapper.jar" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\Icons\Forge.jpg">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Include="..\LICENSE">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
   </ItemGroup>
 
   <ItemGroup>

@@ -5,7 +5,32 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>Chase.Minecraft.Curseforge</RootNamespace>
+    <GenerateDocumentationFile>True</GenerateDocumentationFile>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <Title>CurseForge API Library</Title>
+    <Company>LFInteractive LLC.</Company>
+    <Description>A simple library that </Description>
+    <RepositoryUrl>https://github.com/DcmanProductions/Minecraft.NET</RepositoryUrl>
+    <PackageProjectUrl>https://docs.lfinteractive.net/csharp/minecraft.net/curseforge.net-library</PackageProjectUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>CurseForge.jpg</PackageIcon>
+    <AssemblyVersion>0.0.1</AssemblyVersion>
+    <Copyright>Protected under GNU General Public License v3.0</Copyright>
+    <Authors>Drew Chase</Authors>
+    <Version>0.0.1</Version>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\Icons\CurseForge.jpg">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Include="..\LICENSE">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Chase.Networking" Version="0.0.3" />
@@ -14,6 +39,13 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Minecraft.NET\Minecraft.NET.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
   </ItemGroup>
 
 </Project>

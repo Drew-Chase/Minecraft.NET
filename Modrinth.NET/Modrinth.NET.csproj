@@ -5,7 +5,29 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>Chase.Minecraft.Modrinth</RootNamespace>
+    <GenerateDocumentationFile>True</GenerateDocumentationFile>
+    <Title>Modrinth API Library</Title>
+    <Version>0.0.1</Version>
+    <Authors>Drew Chase</Authors>
+    <Company>LFInteractive LLC.</Company>
+    <Description>A simple library for handling Modrinth API library.</Description>
+    <PackageProjectUrl>https://docs.lfinteractive.net/csharp/minecraft.net/modrinth.net-library</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/DcmanProductions/Minecraft.NET</RepositoryUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>Modrinth.jpg</PackageIcon>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\Icons\Modrinth.jpg">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Include="..\LICENSE">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Chase.Networking" Version="0.0.3" />
@@ -14,6 +36,13 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Minecraft.NET\Minecraft.NET.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
   </ItemGroup>
 
 </Project>

@@ -5,6 +5,14 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>Chase.Minecraft.Modpacks</RootNamespace>
+    <GenerateDocumentationFile>True</GenerateDocumentationFile>
+    <Title>Modpack extension for Minecraft.NET</Title>
+    <Version>0.0.1</Version>
+    <Authors>Drew Chase</Authors>
+    <Company>LFInteractive LLC.</Company>
+    <Description>An extension for Minecraft.NET core library.</Description>
+    <PackageProjectUrl>https://github.com/DcmanProductions/Minecraft.NET</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/DcmanProductions/Minecraft.NET</RepositoryUrl>
   </PropertyGroup>
 
   <ItemGroup>
