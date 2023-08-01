@@ -54,8 +54,6 @@ internal static class MinecraftTest
         // be replaced with a '-'
         InstanceModel instance = new InstanceModel()
         {
-            Name = "Test",
-            Description = "This is a test instance",
             Java = JavaController.GetLocalJVMInstallations("./java").Latest, // This is the path to the java.exe, you can manually specify a locally installed java version or use the built in JavaController.
             WindowWidth = 1280,
             WindowHeight = 720,
