@@ -1,8 +1,9 @@
 ﻿/*
-    Minecraft.NET - LFInteractive LLC. 2021-2024﻿
-    Minecraft.NET and its libraries are a collection of minecraft related libraries to handle downloading mods, modpacks, resourcepacks, and downloading and installing modloaders (fabric, forge, etc)
-    Licensed under GPL-3.0
+    PolygonMC - LFInteractive LLC. 2021-2024
+    PolygonMC is a free and open source Minecraft Launcher implementing various modloaders, mod platforms, and minecraft authentication.
+    PolygonMC is protected under GNU GENERAL PUBLIC LICENSE version 3.0 License
     https://www.gnu.org/licenses/gpl-3.0.en.html#license-text
+    https://github.com/DcmanProductions/PolygonMC
 */
 
 using Chase.Minecraft.Exceptions;
@@ -37,7 +38,7 @@ public static class MicrosoftAuthentication
     /// <returns>
     /// The Minecraft bearer access token if authentication is successful; otherwise, null.
     /// </returns>
-    public static async Task<string?> GetMinecraftBearerAccessToken(string clientId, string redirectUri, string authenticationFile = "msa-auth.json", bool onlyRefresh = false)
+    public static async Task<string?> GetMinecraftBearerAccessToken(string clientId, string redirectUri, string authenticationFile = "msa-auth.json", bool onlyRefresh = false, string html = "<html><style>:root{color-scheme:dark;font-family:\"Roboto\";}body{display:flex;justify-content:center;align-items:center;flex-direction:column;height:100vh;margin:0;}</style><body><h1>Successfully Linked!</h1><h3>You can now close this tab</h3></body></html>")
     {
         if (!File.Exists(authenticationFile) && onlyRefresh)
         {
@@ -46,7 +47,7 @@ public static class MicrosoftAuthentication
         try
         {
             using NetworkClient client = new();
-            XboxLiveAuthResponse? xboxLiveAuthResponse = await GetXboxLiveAuthResponseAsync(client, authenticationFile, clientId, redirectUri, onlyRefresh);
+            XboxLiveAuthResponse? xboxLiveAuthResponse = await GetXboxLiveAuthResponseAsync(client, authenticationFile, clientId, redirectUri, onlyRefresh, html);
             if (xboxLiveAuthResponse == null) { return null; }
 
             string? xsts = await GetXSTSToken(client, xboxLiveAuthResponse);
@@ -188,11 +189,11 @@ public static class MicrosoftAuthentication
         return null;
     }
 
-    private static async Task<XboxLiveAuthResponse?> GetXboxLiveAuthResponseAsync(NetworkClient client, string authenticationFile, string clientId, string redirectUri, bool onlyRefresh)
+    private static async Task<XboxLiveAuthResponse?> GetXboxLiveAuthResponseAsync(NetworkClient client, string authenticationFile, string clientId, string redirectUri, bool onlyRefresh, string html)
     {
         try
         {
-            MicrosoftToken? microsoftToken = await GetMicrosoftAccessToken(client, authenticationFile, clientId, redirectUri, onlyRefresh);
+            MicrosoftToken? microsoftToken = await GetMicrosoftAccessToken(client, authenticationFile, clientId, redirectUri, onlyRefresh, html);
             if (microsoftToken != null)
             {
                 using HttpRequestMessage request = new()
@@ -233,7 +234,7 @@ public static class MicrosoftAuthentication
         return null;
     }
 
-    private static async Task<MicrosoftToken?> GetMicrosoftAccessToken(NetworkClient client, string authenticationFile, string clientId, string redirectUri, bool onlyRefresh)
+    private static async Task<MicrosoftToken?> GetMicrosoftAccessToken(NetworkClient client, string authenticationFile, string clientId, string redirectUri, bool onlyRefresh, string html)
     {
         try
         {
@@ -255,7 +256,7 @@ public static class MicrosoftAuthentication
             {
                 return null;
             }
-            string? code = GetAuthenticationCodeFromBrowser(codeChallenge, clientId, redirectUri);
+            string? code = GetAuthenticationCodeFromBrowser(codeChallenge, clientId, redirectUri, html);
             if (code != null)
             {
                 HttpRequestMessage request = new()
@@ -331,7 +332,7 @@ public static class MicrosoftAuthentication
         return null;
     }
 
-    private static string? GetAuthenticationCodeFromBrowser(string challengeCode, string clientId, string redirectUri)
+    private static string? GetAuthenticationCodeFromBrowser(string challengeCode, string clientId, string redirectUri, string html)
     {
         try
         {
@@ -348,7 +349,7 @@ public static class MicrosoftAuthentication
             string? queryParams = request.Url?.Query;
             if (queryParams != null)
             {
-                SendCloseTabResponse(context.Response);
+                SendCloseTabResponse(context.Response, html);
 
                 Dictionary<string, string> queryParamsCollection = HttpUtility.ParseQueryString(queryParams).AllKeys.ToDictionary(key => key ?? "", key => HttpUtility.ParseQueryString(queryParams)[key] ?? "") ?? new Dictionary<string, string>();
                 string json = JsonConvert.SerializeObject(queryParamsCollection);
@@ -363,10 +364,8 @@ public static class MicrosoftAuthentication
         return null;
     }
 
-    private static void SendCloseTabResponse(HttpListenerResponse response)
+    private static void SendCloseTabResponse(HttpListenerResponse response, string html)
     {
-        string html = "<html><style>:root{color-scheme:dark;font-family:\"Roboto\";}body{display:flex;justify-content:center;align-items:center;flex-direction:column;height:100vh;margin:0;}</style><body><h1>Successfully Linked!</h1><h3>You can now close this tab</h3></body></html>";
-
         byte[] buffer = System.Text.Encoding.UTF8.GetBytes(html);
         response.ContentLength64 = buffer.Length;
         response.ContentType = "text/html";
