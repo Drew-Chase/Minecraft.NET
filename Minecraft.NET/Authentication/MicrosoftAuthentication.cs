@@ -1,8 +1,9 @@
 ﻿/*
-    Minecraft.NET - LFInteractive LLC. 2021-2024﻿
-    Minecraft.NET and its libraries are a collection of minecraft related libraries to handle downloading mods, modpacks, resourcepacks, and downloading and installing modloaders (fabric, forge, etc)
-    Licensed under GPL-3.0
+    PolygonMC - LFInteractive LLC. 2021-2024
+    PolygonMC is a free and open source Minecraft Launcher implementing various modloaders, mod platforms, and minecraft authentication.
+    PolygonMC is protected under GNU GENERAL PUBLIC LICENSE version 3.0 License
     https://www.gnu.org/licenses/gpl-3.0.en.html#license-text
+    https://github.com/DcmanProductions/PolygonMC
 */
 
 using Chase.Minecraft.Exceptions;
@@ -36,12 +37,12 @@ public static class MicrosoftAuthentication
     /// <returns>
     /// The Minecraft bearer access token if authentication is successful; otherwise, null.
     /// </returns>
-    public static async Task<string?> GetMinecraftBearerAccessToken(string clientId, string redirectUri, string authenticationFile = "msa-auth.json")
+    public static async Task<string?> GetMinecraftBearerAccessToken(string clientId, string redirectUri, string authenticationFile = "msa-auth.json", bool onlyRefresh = false)
     {
         try
         {
             using NetworkClient client = new();
-            XboxLiveAuthResponse? xboxLiveAuthResponse = await GetXboxLiveAuthResponseAsync(client, authenticationFile, clientId, redirectUri);
+            XboxLiveAuthResponse? xboxLiveAuthResponse = await GetXboxLiveAuthResponseAsync(client, authenticationFile, clientId, redirectUri, onlyRefresh);
             if (xboxLiveAuthResponse == null) { return null; }
 
             string? xsts = await GetXSTSToken(client, xboxLiveAuthResponse);
@@ -183,11 +184,11 @@ public static class MicrosoftAuthentication
         return null;
     }
 
-    private static async Task<XboxLiveAuthResponse?> GetXboxLiveAuthResponseAsync(NetworkClient client, string authenticationFile, string clientId, string redirectUri)
+    private static async Task<XboxLiveAuthResponse?> GetXboxLiveAuthResponseAsync(NetworkClient client, string authenticationFile, string clientId, string redirectUri, bool onlyRefresh)
     {
         try
         {
-            MicrosoftToken? microsoftToken = await GetMicrosoftAccessToken(client, authenticationFile, clientId, redirectUri);
+            MicrosoftToken? microsoftToken = await GetMicrosoftAccessToken(client, authenticationFile, clientId, redirectUri, onlyRefresh);
             if (microsoftToken != null)
             {
                 using HttpRequestMessage request = new()
@@ -228,7 +229,7 @@ public static class MicrosoftAuthentication
         return null;
     }
 
-    private static async Task<MicrosoftToken?> GetMicrosoftAccessToken(NetworkClient client, string authenticationFile, string clientId, string redirectUri)
+    private static async Task<MicrosoftToken?> GetMicrosoftAccessToken(NetworkClient client, string authenticationFile, string clientId, string redirectUri, bool onlyRefresh)
     {
         try
         {
@@ -245,6 +246,10 @@ public static class MicrosoftAuthentication
                     }
                 }
                 catch { }
+            }
+            if (onlyRefresh)
+            {
+                return null;
             }
             string? code = GetAuthenticationCodeFromBrowser(codeChallenge, clientId, redirectUri);
             if (code != null)
