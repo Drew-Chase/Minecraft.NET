@@ -361,3 +361,8 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+/Test/**
+/Test/CurseforgeTest.cs
+/Test/MinecraftTest.cs
+/Test/ModrinthTest.cs
+/Test/Program.cs
