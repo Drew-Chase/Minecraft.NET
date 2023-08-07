@@ -51,7 +51,7 @@ public struct ModrinthVersionFile
     public string AuthorId { get; set; }
 
     [JsonProperty("date_published")]
-    public string DatePublished { get; set; }
+    public DateTime DatePublished { get; set; }
 
     [JsonProperty("downloads")]
     public int Downloads { get; set; }
