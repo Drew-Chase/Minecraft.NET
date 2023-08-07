@@ -226,6 +226,71 @@ public sealed class ModrinthClient : IDisposable
     }
 
     /// <summary>
+    /// Retrieves information about a specific project version from Modrinth API asynchronously.
+    /// </summary>
+    /// <param name="project_id">The unique identifier of the project.</param>
+    /// <param name="version_id">The unique identifier of the project version.</param>
+    /// <returns>
+    /// A <see cref="Task{TResult}"/> representing the asynchronous operation. The task result
+    /// contains the information about the project version as a <see cref="ModrinthVersionFile"/>
+    /// object, or null if the version is not found.
+    /// </returns>
+    public async Task<ModrinthVersionFile?> GetProjectVersionAsync(string project_id, string version_id) => (await _client.GetAsJson($"{BASE_URL}project/{project_id}/version/{version_id}"))?.ToObject<ModrinthVersionFile>();
+
+    /// <summary>
+    /// Retrieves all project versions that match a specific Minecraft version from Modrinth API asynchronously.
+    /// </summary>
+    /// <param name="project_id">The unique identifier of the project.</param>
+    /// <param name="minecraftVersion">The Minecraft version to filter the project versions by.</param>
+    /// <param name="ignorePatchVersion">
+    /// Flag indicating whether to ignore the patch version of the Minecraft version. If true, only
+    /// the major and minor versions are considered for matching.
+    /// </param>
+    /// <param name="requiredLoader">If set, this will only return version files with a specific mod loader</param>
+    /// <returns>
+    /// A <see cref="Task{TResult}"/> representing the asynchronous operation. The task result
+    /// contains an array of <see cref="ModrinthVersionFile"/> objects that match the specified
+    /// Minecraft version.
+    /// </returns>
+    public async Task<ModrinthVersionFile[]> GetModrinthVersionsByMinecraftVersionAsync(string project_id, MinecraftVersion minecraftVersion, bool ignorePatchVersion = false, ModLoaders? requiredLoader = null)
+    {
+        List<ModrinthVersionFile> versions = new();
+        ModrinthVersionFile[]? projectVerions = await GetProjectVersionsAsync(project_id);
+        if (projectVerions != null && projectVerions.Any())
+        {
+            foreach (ModrinthVersionFile versionFile in projectVerions)
+            {
+                if (requiredLoader != null && !versionFile.Loaders.Contains(requiredLoader.Value.ToString(), StringComparer.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                foreach (string gameVersion in versionFile.GameVersions)
+                {
+                    if (Version.TryParse(gameVersion, out Version? parsedModGameVersion) && parsedModGameVersion != null && Version.TryParse(minecraftVersion.ID, out Version? parsedGameVersion) && parsedGameVersion != null)
+                    {
+                        if (parsedGameVersion.Major == parsedModGameVersion.Major && parsedGameVersion.Minor == parsedModGameVersion.Minor)
+                        {
+                            if (ignorePatchVersion)
+                            {
+                                versions.Add(versionFile);
+                            }
+                            else
+                            {
+                                if (parsedGameVersion.Build == parsedModGameVersion.Build)
+                                {
+                                    versions.Add(versionFile);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return versions.OrderByDescending(i => i.DatePublished).ToArray();
+    }
+
+    /// <summary>
     /// Gets the categories available in Modrinth.
     /// </summary>
     /// <returns>
