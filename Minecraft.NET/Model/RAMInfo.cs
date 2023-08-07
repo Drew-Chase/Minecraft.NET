@@ -5,11 +5,24 @@
     https://www.gnu.org/licenses/gpl-3.0.en.html#license-text
 */
 
+using Newtonsoft.Json;
+
 namespace Chase.Minecraft.Model;
 
+/// <summary>
+/// A data set for Minimum and Maximum Ram
+/// </summary>
 public sealed class RAMInfo
 {
-    public int MaximumRamMB { get; set; } = 4096;
+    /// <summary>
+    /// Maximum ram allocation in megabytes
+    /// </summary>
+    [JsonProperty("max-ram")]
+    public int Maximum { get; set; } = 4096;
 
-    public int MinimumRamMB { get; set; } = 4096;
+    /// <summary>
+    /// Minimum ram allocation in megabytes
+    /// </summary>
+    [JsonProperty("min-ram")]
+    public int Minimum { get; set; } = 4096;
 }

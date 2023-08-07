@@ -451,8 +451,8 @@ public class MinecraftClient : IDisposable
             string natives = Directory.CreateDirectory(Path.Combine(rootDirectory, "natives", instance.MinecraftVersion.ID)).FullName;
 
             string jvm =
-                $"-Xmx{instance.RAM.MaximumRamMB}M " +
-                $"-Xms{instance.RAM.MinimumRamMB}M " +
+                $"-Xmx{instance.RAM.Maximum}M " +
+                $"-Xms{instance.RAM.Minimum}M " +
                 $"-XX:HeapDumpPath=MojangTricksIntelDriversForPerformance_javaw.exe_minecraft.exe.heapdump " +
                 $"-Xss1M -Djava.library.path=\"{natives}\" -Djna.tmpdir=\"{natives}\" " +
                 $"-Dorg.lwjgl.system.SharedLibraryExtractPath=\"{natives}\" " +
