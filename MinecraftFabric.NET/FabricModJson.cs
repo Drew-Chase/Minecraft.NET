@@ -35,9 +35,6 @@ public struct FabricModJson
     [JsonProperty("contact")]
     public ContactInfo Contact { get; set; }
 
-    [JsonProperty("license")]
-    public string License { get; set; }
-
     [JsonProperty("environment")]
     public string Environment { get; set; }
 
