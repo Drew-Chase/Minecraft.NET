@@ -11,6 +11,8 @@ namespace Chase.Minecraft.Model;
 
 public struct ModModel
 {
+    public string ProjectID { get; set; }
+    public string VersionID { get; set; }
     public string Name { get; set; }
     public PlatformSource Source { get; set; }
     public string DownloadURL { get; set; }
