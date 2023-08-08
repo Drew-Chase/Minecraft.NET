@@ -75,9 +75,19 @@ public class CurseforgeClient : IDisposable
 
     public Task<ModFile?> GetWorldFile(string id, string fileId) => GetProjectFile(id, fileId, WORLDS_SECTION_ID);
 
-    private async Task<CurseforgeProject?> GetProject(string id, int classId) => (await _client.GetAsJson($"{BASE_URI}mods/{id}?gameId={GAME_ID}&classId={classId}"))?["data"]?.ToObject<CurseforgeProject>();
+    private async Task<CurseforgeProject?> GetProject(string id, int classId)
+    {
+        using HttpRequestMessage request = new(HttpMethod.Get, $"{BASE_URI}mods/{id}?gameId={GAME_ID}&classId={classId}");
+        request.Headers.Add("x-api-key", _api);
+        return (await _client.GetAsJson(request))?["data"]?.ToObject<CurseforgeProject>();
+    }
 
-    private async Task<ModFile[]?> GetProjectFiles(string id, int classId) => (await _client.GetAsJson($"{BASE_URI}mods/{id}/files?gameId={GAME_ID}&classId={classId}"))?["data"]?.ToObject<ModFile[]>();
+    private async Task<ModFile[]?> GetProjectFiles(string id, int classId)
+    {
+        using HttpRequestMessage request = new(HttpMethod.Get, $"{BASE_URI}mods/{id}/files?gameId={GAME_ID}&classId={classId}");
+        request.Headers.Add("x-api-key", _api);
+        return (await _client.GetAsJson(request))?["data"]?.ToObject<ModFile[]>();
+    }
 
     private async Task<ModFile?> GetProjectFile(string id, string fileId, int classId) => (await _client.GetAsJson($"{BASE_URI}mods/{id}/files/{fileId}?gameId={GAME_ID}&classId={classId}"))?["data"]?.ToObject<ModFile>();
 
