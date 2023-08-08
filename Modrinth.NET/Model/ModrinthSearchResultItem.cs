@@ -40,7 +40,7 @@ public struct ModrinthSearchResultItem
     public string IconUrl { get; set; }
 
     [JsonProperty("color")]
-    public int Color { get; set; }
+    public long? Color { get; set; }
 
     [JsonProperty("project_id")]
     public string ProjectId { get; set; }
