@@ -5,7 +5,7 @@
     https://www.gnu.org/licenses/gpl-3.0.en.html#license-text
 */
 
-// Ignore Spelling: Modloader
+// Ignore Spelling: Modloader Modpack Utils modrinth curseforge
 
 using Chase.Minecraft.Curseforge.Controller;
 using Chase.Minecraft.Curseforge.Model;
@@ -25,11 +25,52 @@ namespace Chase.Minecraft.Modpacks;
 /// Utility class for handling Minecraft modpack-related operations.
 /// </summary>
 public static class ModpackUtils
-{ /// <summary>
-  /// Tries to map the mods present in an instance's mods directory. </summary> <param
-  /// name="instance">The instance model.</param> <param name="modrinthClient">The Modrinth client
-  /// instance.</param> <param name="curseforgeClient">Optional Curseforge client instance.</param>
-  /// <returns>An array of ModModel representing the mapped mods.</returns>
+{
+    public static string[] GetUnmappedMods(InstanceModel instance)
+    {
+        IEnumerable<string> jars = Directory.GetFiles(Path.Combine(instance.Path, "mods"), "*.jar", SearchOption.TopDirectoryOnly);
+        IEnumerable<string> mappedMods = instance.Mods.Select(mod => mod.FileName);
+        List<string> unmapped = new();
+        foreach (string jarFile in jars)
+        {
+            if (!mappedMods.Contains(Path.GetFileName(jarFile)))
+            {
+                unmapped.Add(jarFile);
+            }
+        }
+
+        return unmapped.ToArray();
+    }
+
+    public static int MapUnMappedMods(InstanceModel instance, ModrinthClient modrinthClient, CurseforgeClient? curseforgeClient = null)
+    {
+        int mapped = 0;
+        ConcurrentQueue<ModModel> mods = new(instance.Mods);
+
+        string[] unmapped = GetUnmappedMods(instance);
+
+        Parallel.ForEach(unmapped, jarFile =>
+        {
+            if (TryMapVersionFromJar(jarFile, modrinthClient, out ModModel mod, curseforgeClient))
+            {
+                mods.Enqueue(mod);
+                mapped++;
+            }
+        });
+
+        instance.Mods = mods.ToArray();
+        instance.InstanceManager.Save(instance.Id, instance);
+
+        return mapped;
+    }
+
+    /// <summary>
+    /// Tries to map the mods present in an instance's mods directory.
+    /// </summary>
+    /// <param name="instance">The instance model.</param>
+    /// <param name="modrinthClient">The Modrinth client instance.</param>
+    /// <param name="curseforgeClient">Optional Curseforge client instance.</param>
+    /// <returns>An array of ModModel representing the mapped mods.</returns>
     public static ModModel[] TryMapInstanceMods(InstanceModel instance, ModrinthClient modrinthClient, CurseforgeClient? curseforgeClient = null) => TryMapDirectory(Path.Combine(instance.Path, "mods"), modrinthClient, curseforgeClient);
 
     /// <summary>
@@ -98,19 +139,22 @@ public static class ModpackUtils
                 {
                     foreach (ModrinthVersionFile version in modrinthClient.GetProjectVersions(result.ProjectId) ?? Array.Empty<ModrinthVersionFile>())
                     {
-                        VersionFileDetails? versionFile = version.Files.FirstOrDefault(i => i.Filename.Equals(Path.GetFileName(file), StringComparison.OrdinalIgnoreCase));
-                        if (versionFile != null)
+                        foreach (VersionFileDetails versionFile in version.Files)
                         {
-                            mod = new()
+                            if (versionFile.Filename.Equals(Path.GetFileName(file), StringComparison.OrdinalIgnoreCase))
                             {
-                                ProjectID = result.ProjectId,
-                                VersionID = version.Id,
-                                Name = result.Title,
-                                Source = PlatformSource.Modrinth,
-                                DownloadURL = versionFile.Value.Url
-                            };
-                            Log.Debug("Mapped mod file: {FILE} => {MOD}", file, mod.Name);
-                            return true;
+                                mod = new()
+                                {
+                                    ProjectID = result.ProjectId,
+                                    VersionID = version.Id,
+                                    Name = result.Title,
+                                    Source = PlatformSource.Modrinth,
+                                    DownloadURL = versionFile.Url,
+                                    FileName = Path.GetFileName(file),
+                                };
+                                Log.Debug("Mapped mod file: {FILE} => {MOD}", file, mod.Name);
+                                return true;
+                            }
                         }
                     }
                 }
@@ -135,7 +179,42 @@ public static class ModpackUtils
                                     VersionID = item.Id.ToString(),
                                     DownloadURL = item.DownloadUrl.ToString(),
                                     Source = PlatformSource.Curseforge,
+                                    FileName = Path.GetFileName(file),
                                 };
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+            name = Path.GetFileName(file);
+            searchResults = modrinthClient.Search(new()
+            {
+                Query = name,
+                Limit = 3,
+                Ordering = Modrinth.Data.SearchOrdering.Relevance,
+                Facets = facets
+            });
+            if (searchResults != null && searchResults.HasValue)
+            {
+                foreach (ModrinthSearchResultItem result in searchResults.Value.Hits)
+                {
+                    foreach (ModrinthVersionFile version in modrinthClient.GetProjectVersions(result.ProjectId) ?? Array.Empty<ModrinthVersionFile>())
+                    {
+                        foreach (VersionFileDetails versionFile in version.Files)
+                        {
+                            if (versionFile.Filename.Equals(Path.GetFileName(file), StringComparison.OrdinalIgnoreCase))
+                            {
+                                mod = new()
+                                {
+                                    ProjectID = result.ProjectId,
+                                    VersionID = version.Id,
+                                    Name = result.Title,
+                                    Source = PlatformSource.Modrinth,
+                                    DownloadURL = versionFile.Url,
+                                    FileName = Path.GetFileName(file),
+                                };
+                                Log.Debug("Mapped mod file: {FILE} => {MOD}", file, mod.Name);
                                 return true;
                             }
                         }
