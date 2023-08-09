@@ -6,9 +6,12 @@
 */
 
 using Chase.Minecraft.Model;
+using Chase.Networking;
+using Chase.Networking.Event;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Serilog;
+using System.Collections.Concurrent;
 
 namespace Chase.Minecraft.Instances;
 
@@ -34,6 +37,53 @@ public class InstanceManager
         Instances = new();
         Load();
     }
+
+    /// <summary>
+    /// Re-downloads mods to the instance mods directory
+    /// </summary>
+    /// <param name="instance">the instance</param>
+    /// <param name="downloadProgress">the dictionary with the filename and download progress event.</param>
+    /// <returns></returns>
+    public static void ReDownloadMods(InstanceModel instance, ConcurrentDictionary<string, DownloadProgressEvent>? downloadProgress = null)
+    {
+        using NetworkClient client = new();
+        List<Task> tasks = new();
+        Directory.CreateDirectory(Path.Combine(instance.Path, "mods"));
+        foreach (ModModel mod in instance.Mods)
+        {
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(mod.DownloadURL))
+                {
+                    Log.Debug("Downloading Mod: {MOD}", mod.FileName);
+                    DownloadProgressEvent? progressEvent = null;
+                    if (downloadProgress != null && downloadProgress.ContainsKey(mod.FileName))
+                    {
+                        progressEvent = downloadProgress[mod.FileName];
+                    }
+                    tasks.Add(client.DownloadFileAsync(mod.DownloadURL, Path.Combine(instance.Path, "mods", mod.FileName), progressEvent));
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Error("Unable to download mod: {MOD}", mod.FileName, e);
+            }
+        }
+        Task.WaitAll(tasks.ToArray());
+        Log.Debug("Done Downloading Mods");
+    }
+
+    /// <summary>
+    /// Creates a new Minecraft instance.
+    /// </summary>
+    /// <param name="name">The name of the instance</param>
+    /// <param name="javaPath">The direct path to the java executable.</param>
+    /// <returns>The created <see cref="InstanceModel"/> instance.</returns>
+    public InstanceModel Create(string name, string javaPath) => Create(new InstanceModel()
+    {
+        Name = name,
+        Java = javaPath,
+    });
 
     /// <summary>
     /// Creates a new Minecraft instance.
