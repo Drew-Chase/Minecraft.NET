@@ -248,7 +248,7 @@ public class MinecraftClient : IDisposable
             return;
         }
         string? url = null;
-
+        instance.GameVersion = instance.MinecraftVersion.ID;
         using (HttpResponseMessage response = await _client.GetAsync(instance.MinecraftVersion.URL))
         {
             if (response.IsSuccessStatusCode)
@@ -263,6 +263,7 @@ public class MinecraftClient : IDisposable
             instance.ClientJar = Path.Combine(Directory.CreateDirectory(Path.Combine(rootDirectory, "versions", instance.MinecraftVersion.ID)).FullName, $"{instance.MinecraftVersion.ID}.jar");
             await _client.DownloadFileAsync(url, instance.ClientJar, progressEvent);
         }
+
         SaveToCache();
     }
 
