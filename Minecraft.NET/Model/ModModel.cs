@@ -16,4 +16,5 @@ public struct ModModel
     public string Name { get; set; }
     public PlatformSource Source { get; set; }
     public string DownloadURL { get; set; }
+    public string FileName { get; set; }
 }
