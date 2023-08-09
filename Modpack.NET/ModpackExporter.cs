@@ -23,7 +23,7 @@ public static class ModpackExporter
             using ZipArchive archive = ZipFile.Open(path, ZipArchiveMode.Create);
             archive.CreateEntryFromFile(Path.Combine(instance.Path, "instance.json"), "instance.json");
             CompressionLevel level = CompressionLevel.SmallestSize;
-            foreach (string mod in GetUnknownMods(instance))
+            foreach (string mod in ModpackUtils.GetUnmappedMods(instance))
             {
                 Log.Debug("[EXPORT] Archiving {FILE}", mod);
                 string relativePath = Path.GetRelativePath(instance.Path, mod);
@@ -32,12 +32,20 @@ public static class ModpackExporter
 
             foreach (string additionalPath in additionalPaths)
             {
-                string[] files = Directory.GetFiles(additionalPath, "*", SearchOption.AllDirectories);
-                foreach (string file in files)
+                if (!new FileInfo(additionalPath).Attributes.HasFlag(FileAttributes.Directory))
                 {
-                    Log.Debug("[EXPORT] Archiving {FILE}", file);
-                    string relativePath = Path.GetRelativePath(instance.Path, file);
-                    archive.CreateEntryFromFile(file, relativePath, level);
+                    string relativePath = Path.GetRelativePath(instance.Path, additionalPath);
+                    archive.CreateEntryFromFile(additionalPath, relativePath, level);
+                }
+                else
+                {
+                    string[] files = Directory.GetFiles(additionalPath, "*", SearchOption.AllDirectories);
+                    foreach (string file in files)
+                    {
+                        Log.Debug("[EXPORT] Archiving {FILE}", file);
+                        string relativePath = Path.GetRelativePath(instance.Path, file);
+                        archive.CreateEntryFromFile(file, relativePath, level);
+                    }
                 }
             }
 
@@ -58,22 +66,5 @@ public static class ModpackExporter
         }
 
         return false;
-    }
-
-    public static string[] GetUnknownMods(InstanceModel instance)
-    {
-        IEnumerable<string> mods = instance.Mods.Select(i => i.Name);
-        string[] modJars = Directory.GetFiles(Path.Combine(instance.Path, "mods"), "*.jar", SearchOption.AllDirectories);
-        List<string> unknownMods = new();
-        foreach (string mod in modJars)
-        {
-            string name = Path.GetFileName(mod);
-            if (!mods.Contains(name))
-            {
-                unknownMods.Add(mod);
-            }
-        }
-
-        return unknownMods.ToArray();
     }
 }
