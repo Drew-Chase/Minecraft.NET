@@ -28,155 +28,182 @@ public static class ForgeLoader
 
     public static ModToml? GetLoaderFile(ZipArchive archive)
     {
-        foreach (ZipArchiveEntry entry in archive.Entries)
+        try
         {
-            if (entry.FullName.Equals("META-INF/mods.toml", StringComparison.OrdinalIgnoreCase))
+            foreach (ZipArchiveEntry entry in archive.Entries)
             {
-                using Stream stream = entry.Open();
-                using StreamReader reader = new(stream);
-                string? line;
-                string section = "";
-                bool isDescription = false;
-                Dependency? currentDependency = null;
-                List<Dependency> dependencies = new();
-                ModToml toml = new()
+                try
                 {
-                    Description = ""
-                };
-                while ((line = reader.ReadLine()) != null)
-                {
-                    line = line.Trim();
-                    if (line.StartsWith('#'))
+                    if (entry.FullName.Equals("META-INF/mods.toml", StringComparison.OrdinalIgnoreCase))
                     {
-                        continue;
-                    }
-                    int indexOfEquals = line.IndexOf('=');
-                    int indexOfComment = line.IndexOf('#');
-                    if (indexOfComment != -1)
-                    {
-                        line = line[..indexOfComment].Trim('#').Trim();
-                    }
-                    if (isDescription)
-                    {
-                        if (line.Equals("'''") || line.EndsWith("'''"))
+                        using Stream stream = entry.Open();
+                        using StreamReader reader = new(stream);
+                        string? line;
+                        string section = "";
+                        bool isDescription = false;
+                        Dependency? currentDependency = null;
+                        List<Dependency> dependencies = new();
+                        ModToml toml = new()
                         {
-                            isDescription = false;
-                        }
-                        else
+                            Description = ""
+                        };
+                        int lineNumber = 0;
+                        while ((line = reader.ReadLine()) != null)
                         {
-                            toml.Description += "\n" + line;
+                            lineNumber++;
+                            try
+                            {
+                                line = line.Trim();
+                                if (line.StartsWith('#'))
+                                {
+                                    continue;
+                                }
+                                int indexOfEquals = line.IndexOf('=');
+                                int indexOfComment = line.IndexOf('#');
+                                if (indexOfComment != -1)
+                                {
+                                    line = line[..indexOfComment].Trim('#').Trim();
+                                }
+                                if (isDescription)
+                                {
+                                    if (line.Equals("'''") || line.EndsWith("'''"))
+                                    {
+                                        isDescription = false;
+                                    }
+                                    else
+                                    {
+                                        toml.Description += "\n" + line;
+                                    }
+                                }
+                                if (line.StartsWith("[[mods]]"))
+                                {
+                                    section = "mods";
+                                }
+                                else if (line.StartsWith("[[dependencies"))
+                                {
+                                    section = "dependency";
+                                    if (currentDependency != null)
+                                    {
+                                        dependencies.Add(currentDependency);
+                                    }
+                                    currentDependency = new Dependency();
+                                }
+                                if (indexOfEquals != -1)
+                                {
+                                    string value = line[indexOfEquals..].TrimStart('=').Trim().Trim('"').Trim();
+                                    if (line.StartsWith("issueTrackerURL"))
+                                    {
+                                        toml.IssueTrackerUrl = value;
+                                    }
+                                    else if (line.StartsWith("license"))
+                                    {
+                                        toml.License = value;
+                                    }
+
+                                    if (section == "mods")
+                                    {
+                                        if (line.StartsWith("modId"))
+                                        {
+                                            toml.ModId = value;
+                                        }
+                                        else if (line.StartsWith("version"))
+                                        {
+                                            toml.Version = value;
+                                        }
+                                        else if (line.StartsWith("displayName"))
+                                        {
+                                            toml.DisplayName = value;
+                                        }
+                                        else if (line.StartsWith("updateJSONURL"))
+                                        {
+                                            toml.UpdateJsonUrl = new Uri(value);
+                                        }
+                                        else if (line.StartsWith("displayURL"))
+                                        {
+                                            toml.DisplayUrl = value;
+                                        }
+                                        else if (line.StartsWith("logoFile"))
+                                        {
+                                            toml.LogoFile = value;
+                                        }
+                                        else if (line.StartsWith("authors"))
+                                        {
+                                            toml.Authors = value;
+                                        }
+                                        else if (line.StartsWith("description"))
+                                        {
+                                            if (value.Equals("'''"))
+                                            {
+                                                isDescription = true;
+                                            }
+                                            else if (value.StartsWith("'''"))
+                                            {
+                                                isDescription = true;
+                                                toml.Description += value.Replace("'''", "").Trim();
+                                                if (value.EndsWith("'''"))
+                                                {
+                                                    isDescription = false;
+                                                }
+                                            }
+                                            else
+                                            {
+                                                toml.Description = value;
+                                            }
+                                        }
+                                        else if (line.Equals("'''") || line.EndsWith("'''"))
+                                        {
+                                            isDescription = false;
+                                        }
+                                    }
+                                    else if (section.Equals("dependency"))
+                                    {
+                                        currentDependency ??= new();
+                                        if (line.StartsWith("modId"))
+                                        {
+                                            currentDependency.ModId = value;
+                                        }
+                                        else if (line.StartsWith("mandatory"))
+                                        {
+                                            currentDependency.Mandatory = bool.Parse(value);
+                                        }
+                                        else if (line.StartsWith("versionRange"))
+                                        {
+                                            currentDependency.VersionRange = value;
+                                        }
+                                        else if (line.StartsWith("ordering"))
+                                        {
+                                            currentDependency.Ordering = (ModOrdering)Enum.Parse(typeof(ModOrdering), value);
+                                        }
+                                        else if (line.StartsWith("side"))
+                                        {
+                                            currentDependency.Side = (Side)Enum.Parse(typeof(Side), value);
+                                        }
+                                    }
+                                }
+                            }
+                            catch (Exception e)
+                            {
+                                Log.Error("Unable to parse line: {LINE} - {MSG}", lineNumber, e.Message, e);
+                            }
                         }
-                    }
-                    if (line.StartsWith("[[mods]]"))
-                    {
-                        section = "mods";
-                    }
-                    else if (line.StartsWith($"[[dependencies.{toml.ModId}]]"))
-                    {
-                        section = "dependency";
                         if (currentDependency != null)
                         {
                             dependencies.Add(currentDependency);
                         }
-                        currentDependency = new Dependency();
-                    }
-                    if (indexOfEquals != -1)
-                    {
-                        string value = line[indexOfEquals..].TrimStart('=').Trim().Trim('"').Trim();
-                        if (line.StartsWith("issueTrackerURL"))
-                        {
-                            toml.IssueTrackerUrl = value;
-                        }
-                        else if (line.StartsWith("license"))
-                        {
-                            toml.License = value;
-                        }
-
-                        if (section == "mods")
-                        {
-                            if (line.StartsWith("modId"))
-                            {
-                                toml.ModId = value;
-                            }
-                            else if (line.StartsWith("version"))
-                            {
-                                toml.Version = value;
-                            }
-                            else if (line.StartsWith("displayName"))
-                            {
-                                toml.DisplayName = value;
-                            }
-                            else if (line.StartsWith("updateJSONURL"))
-                            {
-                                toml.UpdateJsonUrl = new Uri(value);
-                            }
-                            else if (line.StartsWith("displayURL"))
-                            {
-                                toml.DisplayUrl = value;
-                            }
-                            else if (line.StartsWith("logoFile"))
-                            {
-                                toml.LogoFile = value;
-                            }
-                            else if (line.StartsWith("authors"))
-                            {
-                                toml.Authors = value;
-                            }
-                            else if (line.StartsWith("description"))
-                            {
-                                if (value.Equals("'''"))
-                                {
-                                    isDescription = true;
-                                }
-                                else if (value.StartsWith("'''"))
-                                {
-                                    isDescription = true;
-                                    toml.Description += value.Replace("'''", "").Trim();
-                                }
-                                else
-                                {
-                                    toml.Description = value;
-                                }
-                            }
-                            else if (line.Equals("'''") || line.EndsWith("'''"))
-                            {
-                                isDescription = false;
-                            }
-                        }
-                        else if (section.Equals("dependency"))
-                        {
-                            currentDependency ??= new();
-                            if (line.StartsWith("modId"))
-                            {
-                                currentDependency.ModId = value;
-                            }
-                            else if (line.StartsWith("mandatory"))
-                            {
-                                currentDependency.Mandatory = bool.Parse(value);
-                            }
-                            else if (line.StartsWith("versionRange"))
-                            {
-                                currentDependency.VersionRange = value;
-                            }
-                            else if (line.StartsWith("ordering"))
-                            {
-                                currentDependency.Ordering = (ModOrdering)Enum.Parse(typeof(ModOrdering), value);
-                            }
-                            else if (line.StartsWith("side"))
-                            {
-                                currentDependency.Side = (Side)Enum.Parse(typeof(Side), value);
-                            }
-                        }
+                        toml.Dependencies = dependencies.ToArray();
+                        toml.Description = toml.Description.Trim('\n').Trim();
+                        return toml;
                     }
                 }
-                if (currentDependency != null)
+                catch (Exception e)
                 {
-                    dependencies.Add(currentDependency);
+                    Log.Error("Unable to read entry from jar: {ENTRY} - {MSG}", entry.Name, e.Message, e);
                 }
-                toml.Dependencies = dependencies.ToArray();
-                toml.Description = toml.Description.Trim('\n').Trim();
-                return toml;
             }
+        }
+        catch (Exception e)
+        {
+            Log.Error("Unable to read jar entries: {MSG}", e.Message, e);
         }
         return null;
     }
