@@ -6,18 +6,19 @@
 */
 
 using Newtonsoft.Json;
+using System.Runtime.Serialization;
 
 namespace Chase.Minecraft.Fabric;
 
 public enum Environment
 {
-    [JsonProperty("*")]
+    [EnumMember(Value = "*")]
     All,
 
-    [JsonProperty("client")]
+    [EnumMember(Value = "client")]
     Client,
 
-    [JsonProperty("server")]
+    [EnumMember(Value = "server")]
     Server
 }
 
@@ -42,7 +43,7 @@ public struct FabricModJson
     public string Icon { get; set; }
 
     [JsonProperty("authors")]
-    public string[] Authors { get; set; }
+    public object Authors { get; set; }
 
     [JsonProperty("contact")]
     public ContactInfo Contact { get; set; }
@@ -63,7 +64,7 @@ public struct FabricModJson
     public string AccessWidener { get; set; }
 
     [JsonProperty("mixins")]
-    public string[] Mixins { get; set; }
+    public object[] Mixins { get; set; }
 
     [JsonProperty("jars")]
     public JarInfo[] Jars { get; set; }
@@ -84,25 +85,25 @@ public struct ContactInfo
 public struct EntryPoints
 {
     [JsonProperty("client")]
-    public string[] Client { get; set; }
+    public object[] Client { get; set; }
 
     [JsonProperty("modmenu")]
-    public string[] ModMenu { get; set; }
+    public object[] ModMenu { get; set; }
 
     [JsonProperty("main")]
-    public string[] Main { get; set; }
+    public object[] Main { get; set; }
 
     [JsonProperty("server")]
-    public string[] Server { get; set; }
+    public object[] Server { get; set; }
 }
 
 public struct Dependencies
 {
     [JsonProperty("fabricloader")]
-    public string FabricLoader { get; set; }
+    public object FabricLoader { get; set; }
 
     [JsonProperty("minecraft")]
-    public string Minecraft { get; set; }
+    public object Minecraft { get; set; }
 }
 
 public struct Recommends
