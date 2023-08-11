@@ -15,7 +15,6 @@ using Serilog;
 using System.Diagnostics;
 using System.IO.Compression;
 using System.Reflection;
-using System.Text.RegularExpressions;
 
 namespace Chase.Minecraft.Forge;
 
@@ -24,76 +23,159 @@ public static class ForgeLoader
     public static ModToml? GetLoaderFile(string jar)
     {
         using ZipArchive archive = ZipFile.OpenRead(jar);
+        return GetLoaderFile(archive);
+    }
+
+    public static ModToml? GetLoaderFile(ZipArchive archive)
+    {
         foreach (ZipArchiveEntry entry in archive.Entries)
         {
             if (entry.FullName.Equals("META-INF/mods.toml", StringComparison.OrdinalIgnoreCase))
             {
                 using Stream stream = entry.Open();
                 using StreamReader reader = new(stream);
-                string data = reader.ReadToEnd();
-
-                // Define regex patterns
-                var patternKeyValue = new Regex(@"(\S+)\s*=\s*[""']?(.*?)[""']?$");
-                var patternSection = new Regex(@"^\[([^]]+)\]$");
-
-                // Parse the data using regex
-                var sections = new Dictionary<string, object>();
-                string currentSection = null;
-                List<Dictionary<string, string>> currentList = null;
-                Dictionary<string, string> currentObject = null;
-
-                foreach (string line in data.Split('\n'))
+                string? line;
+                string section = "";
+                bool isDescription = false;
+                Dependency? currentDependency = null;
+                List<Dependency> dependencies = new();
+                ModToml toml = new()
                 {
-                    var trimmedLine = line.Trim();
-                    if (patternSection.IsMatch(trimmedLine))
+                    Description = ""
+                };
+                while ((line = reader.ReadLine()) != null)
+                {
+                    line = line.Trim();
+                    if (line.StartsWith('#'))
                     {
-                        currentSection = patternSection.Match(trimmedLine).Groups[1].Value;
-                        if (currentSection.EndsWith("s"))
+                        continue;
+                    }
+                    int indexOfEquals = line.IndexOf('=');
+                    int indexOfComment = line.IndexOf('#');
+                    if (indexOfComment != -1)
+                    {
+                        line = line[..indexOfComment].Trim('#').Trim();
+                    }
+                    if (isDescription)
+                    {
+                        if (line.Equals("'''") || line.EndsWith("'''"))
                         {
-                            currentList = new List<Dictionary<string, string>>();
-                            sections[currentSection] = currentList;
+                            isDescription = false;
                         }
                         else
                         {
-                            currentObject = new Dictionary<string, string>();
-                            sections[currentSection] = currentObject;
+                            toml.Description += "\n" + line;
                         }
                     }
-                    else if (patternKeyValue.IsMatch(trimmedLine))
+                    if (line.StartsWith("[[mods]]"))
                     {
-                        var match = patternKeyValue.Match(trimmedLine);
-                        string key = match.Groups[1].Value;
-                        string value = match.Groups[2].Value;
+                        section = "mods";
+                    }
+                    else if (line.StartsWith($"[[dependencies.{toml.ModId}]]"))
+                    {
+                        section = "dependency";
+                        if (currentDependency != null)
+                        {
+                            dependencies.Add(currentDependency);
+                        }
+                        currentDependency = new Dependency();
+                    }
+                    if (indexOfEquals != -1)
+                    {
+                        string value = line[indexOfEquals..].TrimStart('=').Trim().Trim('"').Trim();
+                        if (line.StartsWith("issueTrackerURL"))
+                        {
+                            toml.IssueTrackerUrl = value;
+                        }
+                        else if (line.StartsWith("license"))
+                        {
+                            toml.License = value;
+                        }
 
-                        if (currentSection == null)
+                        if (section == "mods")
                         {
-                            sections[key] = value;
-                        }
-                        else if (sections[currentSection] is List<Dictionary<string, string>> list)
-                        {
-                            if (currentObject != null)
+                            if (line.StartsWith("modId"))
                             {
-                                list.Add(currentObject);
-                                currentObject = null;
+                                toml.ModId = value;
                             }
-                            var lastObject = list.LastOrDefault();
-                            if (lastObject == null || lastObject.ContainsKey(key))
+                            else if (line.StartsWith("version"))
                             {
-                                currentObject = new Dictionary<string, string>();
-                                list.Add(currentObject);
+                                toml.Version = value;
                             }
-                            list.LastOrDefault()?.Add(key, value);
+                            else if (line.StartsWith("displayName"))
+                            {
+                                toml.DisplayName = value;
+                            }
+                            else if (line.StartsWith("updateJSONURL"))
+                            {
+                                toml.UpdateJsonUrl = new Uri(value);
+                            }
+                            else if (line.StartsWith("displayURL"))
+                            {
+                                toml.DisplayUrl = value;
+                            }
+                            else if (line.StartsWith("logoFile"))
+                            {
+                                toml.LogoFile = value;
+                            }
+                            else if (line.StartsWith("authors"))
+                            {
+                                toml.Authors = value;
+                            }
+                            else if (line.StartsWith("description"))
+                            {
+                                if (value.Equals("'''"))
+                                {
+                                    isDescription = true;
+                                }
+                                else if (value.StartsWith("'''"))
+                                {
+                                    isDescription = true;
+                                    toml.Description += value.Replace("'''", "").Trim();
+                                }
+                                else
+                                {
+                                    toml.Description = value;
+                                }
+                            }
+                            else if (line.Equals("'''") || line.EndsWith("'''"))
+                            {
+                                isDescription = false;
+                            }
                         }
-                        else if (sections[currentSection] is Dictionary<string, string> dict)
+                        else if (section.Equals("dependency"))
                         {
-                            dict[key] = value;
+                            currentDependency ??= new();
+                            if (line.StartsWith("modId"))
+                            {
+                                currentDependency.ModId = value;
+                            }
+                            else if (line.StartsWith("mandatory"))
+                            {
+                                currentDependency.Mandatory = bool.Parse(value);
+                            }
+                            else if (line.StartsWith("versionRange"))
+                            {
+                                currentDependency.VersionRange = value;
+                            }
+                            else if (line.StartsWith("ordering"))
+                            {
+                                currentDependency.Ordering = (ModOrdering)Enum.Parse(typeof(ModOrdering), value);
+                            }
+                            else if (line.StartsWith("side"))
+                            {
+                                currentDependency.Side = (Side)Enum.Parse(typeof(Side), value);
+                            }
                         }
                     }
                 }
-
-                // Convert to JSON
-                string json = JsonConvert.SerializeObject(sections, Formatting.Indented);
-                Console.WriteLine(json);
+                if (currentDependency != null)
+                {
+                    dependencies.Add(currentDependency);
+                }
+                toml.Dependencies = dependencies.ToArray();
+                toml.Description = toml.Description.Trim('\n').Trim();
+                return toml;
             }
         }
         return null;
@@ -240,6 +322,39 @@ public static class ForgeLoader
             }
         }
         return Array.Empty<string>();
+    }
+
+    public static async Task<string> InstallServer(string directory, string loaderVersion, MinecraftVersion minecraftVersion, string javaExe, DataReceivedEventHandler? installDataHandler = null)
+    {
+        directory = Directory.CreateDirectory(directory).FullName;
+        string installer = Path.Combine(directory, "forge-installer.jar");
+        using NetworkClient client = new();
+        Uri url = new($"https://maven.minecraftforge.net/net/minecraftforge/forge/{minecraftVersion.ID}-{loaderVersion}/forge-{minecraftVersion.ID}-{loaderVersion}-installer.jar");
+        await client.DownloadFileAsync(url, installer);
+        Process process = new()
+        {
+            StartInfo = new()
+            {
+                FileName = javaExe,
+                Arguments = $"-jar {installer} -installServer .",
+                WorkingDirectory = directory,
+                RedirectStandardError = true,
+                RedirectStandardOutput = true,
+            },
+            EnableRaisingEvents = true,
+        };
+
+        if (installDataHandler != null)
+        {
+            process.OutputDataReceived += installDataHandler;
+        }
+        process.Start();
+        process.BeginOutputReadLine();
+        process.BeginErrorReadLine();
+        process.WaitForExit();
+        File.Delete(installer);
+
+        return installer;
     }
 
     private static string ExtractWrapper()
