@@ -7,34 +7,40 @@
 
 namespace Chase.Minecraft.Forge.Model;
 
-public struct ModToml
+public enum ModOrdering
 {
-    public string modLoader { get; set; }
-    public string loaderVersion { get; set; }
-    public string license { get; set; }
-    public string issueTrackerURL { get; set; }
-    public string displayURL { get; set; }
-    public string logoFile { get; set; }
-    public string authors { get; set; }
-    public List<ModEntry> mods { get; set; }
+    NONE,
+    BEFORE,
+    AFTER,
 }
 
-public sealed class ModEntry
+public enum Side
 {
-    public string modId { get; set; }
-    public string version { get; set; }
-    public string displayName { get; set; }
-    public string updateJSONURL { get; set; }
-    public string displayTest { get; set; }
-    public string description { get; set; }
-    public List<Dependency> dependencies { get; set; }
+    BOTH,
+    CLIENT,
+    SERVER,
+}
+
+public struct ModToml
+{
+    public string ModId { get; set; }
+    public string Version { get; set; }
+    public string License { get; set; }
+    public string DisplayName { get; set; }
+    public Uri? UpdateJsonUrl { get; set; }
+    public string DisplayUrl { get; set; }
+    public string IssueTrackerUrl { get; set; }
+    public string LogoFile { get; set; }
+    public string Authors { get; set; }
+    public string Description { get; set; }
+    public Dependency[] Dependencies { get; set; }
 }
 
 public sealed class Dependency
 {
-    public string modId { get; set; }
-    public bool mandatory { get; set; }
-    public string versionRange { get; set; }
-    public string ordering { get; set; }
-    public string side { get; set; }
+    public string ModId { get; set; }
+    public bool Mandatory { get; set; }
+    public string VersionRange { get; set; }
+    public ModOrdering Ordering { get; set; }
+    public Side Side { get; set; }
 }
