@@ -21,21 +21,40 @@ public static class Serverpack
 {
     public static async Task<bool> TryGenerateServerpack(InstanceModel instance, string archivePath)
     {
+        string javaExe = "";
+        string[] exes = JavaController.GetGlobalJVMInstallations();
+        if (exes.Any())
+        {
+            javaExe = exes[0];
+        }
+        return await TryGenerateServerpack(instance, archivePath, javaExe);
+    }
+
+    public static async Task<bool> TryGenerateServerpack(InstanceModel instance, string archivePath, string javaExe) =>
+        await TryGenerateServerpack(instance.ModLoader, instance.MinecraftVersion, Path.Combine(instance.Path, "mods"), archivePath, javaExe);
+
+    public static async Task<bool> TryGenerateServerpack(ModLoaderModel loader, MinecraftVersion version, string modsDirectory, string archivePath, string javaExe)
+    {
         try
         {
-            string tmp = Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), "LFInteractive", "Minecraft.NET", "serverpacks", Path.GetTempFileName())).FullName;
+            string tmp = Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), "LFInteractive", "Minecraft.NET", "serverpacks", Path.GetRandomFileName())).FullName;
             string modsDir = Directory.CreateDirectory(Path.Combine(tmp, "mods")).FullName;
-            foreach (string file in GetServerMods(Path.Combine(instance.Path, "mods"), instance.ModLoader.Modloader))
+            string[] serverMods = GetServerMods(modsDirectory, loader.Modloader, out string[] additionalFiles);
+            foreach (string file in serverMods)
+            {
+                File.Copy(file, Path.Combine(modsDir, Path.GetFileName(file)), true);
+            }
+            foreach (string file in additionalFiles)
             {
                 File.Copy(file, Path.Combine(modsDir, Path.GetFileName(file)), true);
             }
 
             using (NetworkClient client = new())
             {
-                switch (instance.ModLoader.Modloader)
+                switch (loader.Modloader)
                 {
                     case ModLoaders.None:
-                        PistonModel? piston = await MinecraftVersionController.GetPistonData(instance.MinecraftVersion);
+                        PistonModel? piston = await MinecraftVersionController.GetPistonData(version);
                         if (piston == null)
                         {
                             return false;
@@ -45,15 +64,29 @@ public static class Serverpack
                         break;
 
                     case ModLoaders.Fabric:
-                        await FabricLoader.InstallServer(tmp, instance.ModLoader.Version, instance.MinecraftVersion);
+                        await FabricLoader.InstallServer(tmp, loader.Version, version);
                         break;
 
                     case ModLoaders.Forge:
-                        await ForgeLoader.InstallServer(tmp, instance.ModLoader.Version, instance.MinecraftVersion);
+                        if (!File.Exists(javaExe))
+                        {
+                            return false;
+                        }
+                        await ForgeLoader.InstallServer(tmp, loader.Version, version, javaExe, (s, e) =>
+                        {
+                            string? data = e.Data;
+                            if (!string.IsNullOrWhiteSpace(data))
+                            {
+                                Log.Debug(data);
+                            }
+                        });
                         break;
                 }
             }
-
+            if (File.Exists(archivePath))
+            {
+                File.Delete(archivePath);
+            }
             ZipFile.CreateFromDirectory(tmp, archivePath);
             Directory.Delete(tmp, true);
             return true;
@@ -65,41 +98,77 @@ public static class Serverpack
         }
     }
 
-    public static string[] GetServerMods(string modsPath, ModLoaders loader)
+    public static string[] GetServerMods(string modsPath, ModLoaders loader) => GetServerMods(modsPath, loader, out _);
+
+    public static string[] GetServerMods(string modsPath, ModLoaders loader, out string[] nonModdedFiles)
     {
+        Log.Information("Getting '{LOADER}' server mods from directory: {PATH}", loader, modsPath);
         List<string> mods = new();
+        List<string> nonModdedList = new();
         string[] files = Directory.GetFiles(modsPath, "*.jar", SearchOption.TopDirectoryOnly);
 
         foreach (string file in files)
         {
-            using ZipArchive archive = ZipFile.OpenRead(file);
-            switch (loader)
+            Log.Debug("Scanning '{FILE}'", Path.GetFileName(file));
+            bool found = false;
+            try
             {
-                case ModLoaders.Fabric:
-                    FabricModJson? json = FabricLoader.GetLoaderFile(archive);
-                    if (json != null && json.Value.Environment != Fabric.Environment.Client)
-                    {
-                        if (json.Value.EntryPoints.Main.Any() || json.Value.EntryPoints.Server.Any())
+                using ZipArchive archive = ZipFile.OpenRead(file);
+                switch (loader)
+                {
+                    case ModLoaders.Fabric:
+                        FabricModJson? json = FabricLoader.GetLoaderFile(archive);
+                        if (json != null && json.Value.Environment != Fabric.Environment.Client)
                         {
-                            mods.Add(file);
+                            found = true;
+                            if ((json.Value.EntryPoints.Main != null && json.Value.EntryPoints.Main.Any()) || (json.Value.EntryPoints.Server != null && json.Value.EntryPoints.Server.Any()))
+                            {
+                                Log.Debug("File was a server mod '{FILE}'", Path.GetFileName(file));
+                                mods.Add(file);
+                            }
                         }
-                    }
-                    break;
+                        break;
 
-                case ModLoaders.Forge:
-                    ModToml? toml = ForgeLoader.GetLoaderFile(archive);
-                    if (toml != null)
-                    {
-                        Side side = toml.Value.Dependencies.First(i => i.ModId == "forge").Side;
-                        if (side != Side.CLIENT)
+                    case ModLoaders.Forge:
+                        ModToml? toml = ForgeLoader.GetLoaderFile(archive);
+                        try
                         {
-                            mods.Add(file);
+                            if (toml != null)
+                            {
+                                found = true;
+                                if (toml.Value.Dependencies.Any(i => i.ModId == "forge"))
+                                {
+                                    Side side = toml.Value.Dependencies.First(i => i.ModId == "forge").Side;
+                                    if (side != Side.CLIENT)
+                                    {
+                                        Log.Debug("File was a server mod '{FILE}'", Path.GetFileName(file));
+                                        mods.Add(file);
+                                    }
+                                }
+                                else
+                                {
+                                    mods.Add(file);
+                                }
+                            }
                         }
-                    }
-                    break;
+                        catch (Exception e)
+                        {
+                            Log.Error("Unable to parse mod.toml from jar: {JAR} - {MSG}", file, e.Message, e);
+                        }
+                        break;
+                }
+                if (!found)
+                {
+                    nonModdedList.Add(file);
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Error("Unable to verify mod: {FILE} - {MSG}", Path.GetFileName(file), e.Message, e);
+                continue;
             }
         }
-
+        nonModdedFiles = nonModdedList.ToArray();
         return mods.ToArray();
     }
 }
