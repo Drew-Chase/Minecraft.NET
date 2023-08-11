@@ -6,6 +6,7 @@
 */
 
 using Chase.Minecraft.Model;
+using Chase.Minecraft.Model.Piston;
 using Chase.Networking;
 using Newtonsoft.Json.Linq;
 
@@ -72,4 +73,10 @@ public static class MinecraftVersionController
     /// </summary>
     /// <returns>The retrieved MinecraftVersionManifest object, if successful; otherwise, null.</returns>
     public static MinecraftVersionManifest? GetMinecraftVersionManifest() => GetMinecraftVersionManifestAsync().Result;
+
+    public static async Task<PistonModel?> GetPistonData(MinecraftVersion version)
+    {
+        using NetworkClient client = new();
+        return (await client.GetAsJson(version.URL.ToString()))?.ToObject<PistonModel>();
+    }
 }
