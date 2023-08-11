@@ -9,6 +9,18 @@ using Newtonsoft.Json;
 
 namespace Chase.Minecraft.Fabric;
 
+public enum Environment
+{
+    [JsonProperty("*")]
+    All,
+
+    [JsonProperty("client")]
+    Client,
+
+    [JsonProperty("server")]
+    Server
+}
+
 public struct FabricModJson
 {
     [JsonProperty("schemaVersion")]
@@ -36,7 +48,7 @@ public struct FabricModJson
     public ContactInfo Contact { get; set; }
 
     [JsonProperty("environment")]
-    public string Environment { get; set; }
+    public Environment Environment { get; set; }
 
     [JsonProperty("entrypoints")]
     public EntryPoints EntryPoints { get; set; }
@@ -76,6 +88,12 @@ public struct EntryPoints
 
     [JsonProperty("modmenu")]
     public string[] ModMenu { get; set; }
+
+    [JsonProperty("main")]
+    public string[] Main { get; set; }
+
+    [JsonProperty("server")]
+    public string[] Server { get; set; }
 }
 
 public struct Dependencies
