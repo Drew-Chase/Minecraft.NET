@@ -39,6 +39,17 @@ public class CurseforgeClient : IDisposable
         _api = api_key;
     }
 
+    public static string GetFileDirectDownloadUrl(CurseforgeProject project, ModFile mod)
+    {
+        if (!project.AllowModDistribution || mod.DownloadUrl == null)
+        {
+            string part1 = mod.Id.ToString()[..^3];
+            string part2 = mod.Id.ToString()[^3..].TrimStart('0');
+            return $"https://edge.forgecdn.net/files/{part1}/{part2}/{mod.FileName}";
+        }
+        return mod.DownloadUrl.ToString() ?? "";
+    }
+
     /// <summary>
     /// Disposes of the resources used by the CurseforgeClient.
     /// </summary>
@@ -140,7 +151,7 @@ public class CurseforgeClient : IDisposable
     /// A task representing the asynchronous operation. The result contains the path to the
     /// downloaded file.
     /// </returns>
-    public Task<string> Download(ModFile mod, InstanceModel instance, string subfolder = "mods", DownloadProgressEvent? progressEvent = null) => Download(mod, Path.Combine(instance.Path, subfolder), progressEvent);
+    public Task<string> Download(CurseforgeProject project, ModFile mod, InstanceModel instance, string subfolder = "mods", DownloadProgressEvent? progressEvent = null) => Download(project, mod, Path.Combine(instance.Path, subfolder), progressEvent);
 
     /// <summary>
     /// Downloads a mod file asynchronously.
@@ -152,10 +163,10 @@ public class CurseforgeClient : IDisposable
     /// A task representing the asynchronous operation. The result contains the path to the
     /// downloaded file.
     /// </returns>
-    public async Task<string> Download(ModFile mod, string directory, DownloadProgressEvent? progressEvent = null)
+    public async Task<string> Download(CurseforgeProject project, ModFile mod, string directory, DownloadProgressEvent? progressEvent = null)
     {
         string path = Path.Combine(directory, mod.FileName);
-        await _client.DownloadFileAsync(mod.DownloadUrl, path, progressEvent);
+        await _client.DownloadFileAsync(GetFileDirectDownloadUrl(project, mod), path, progressEvent);
         return path;
     }
 
