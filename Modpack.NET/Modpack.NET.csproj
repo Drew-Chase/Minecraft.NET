@@ -16,6 +16,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Chase.Search" Version="0.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\CurseForge.NET\CurseForge.NET.csproj" />
     <ProjectReference Include="..\Minecraft.NET\Minecraft.NET.csproj" />
     <ProjectReference Include="..\MinecraftFabric.NET\MinecraftFabric.NET.csproj" />
