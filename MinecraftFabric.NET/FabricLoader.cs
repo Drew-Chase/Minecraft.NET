@@ -26,6 +26,11 @@ public static class FabricLoader
     public static FabricModJson? GetLoaderFile(string jar)
     {
         using ZipArchive archive = ZipFile.OpenRead(jar);
+        return GetLoaderFile(archive);
+    }
+
+    public static FabricModJson? GetLoaderFile(ZipArchive archive)
+    {
         foreach (ZipArchiveEntry entry in archive.Entries)
         {
             if (entry.FullName.Equals("fabric.mod.json", StringComparison.OrdinalIgnoreCase))
@@ -93,6 +98,15 @@ public static class FabricLoader
         {
             throw new Exception($"Fabric installer version could not be found!");
         }
+    }
+
+    public static async Task<string> InstallServer(string directory, string loaderVersion, MinecraftVersion minecraftVersion)
+    {
+        directory = Directory.CreateDirectory(directory).FullName;
+        string file = Path.Combine(directory, "fabric-server.jar");
+        using NetworkClient client = new();
+        await client.DownloadFileAsync($"https://meta.fabricmc.net/v2/versions/loader/{minecraftVersion.ID}/{loaderVersion}/{await GetLatestInstallerVersion(client)}/server/jar", file);
+        return file;
     }
 
     /// <summary>
