@@ -77,7 +77,7 @@ public static class MultiPlatformInteropClient
                         Platform = Minecraft.Data.PlatformSource.Modrinth,
                         GameVersions = hit.Versions,
                         Versions = Array.Empty<ResourceItemVersion>(),
-                        SupportedLoaders = Array.Empty<ModLoaders>(),
+                        SupportedLoaders = searchBuilder.loaders.ToArray(),
                         ReleaseDate = hit.DateCreated,
                         LastUpdated = hit.DateModified,
                         IsDistributionAllowed = true,
@@ -97,41 +97,47 @@ public static class MultiPlatformInteropClient
                     totalResults += result.Value.Pagination.TotalCount;
                     foreach (var item in result.Value.Projects)
                     {
-                        mods.Add(new()
+                        Mod? mod = mods.First(i => i.Title == item.Name && i.Author == item.Authors.First().Name) ?? null;
+                        if (mod != null)
                         {
-                            ID = item.Id.ToString(),
-                            Title = item.Name,
-                            Author = item.Authors.FirstOrDefault().Name,
-                            ClientSide = Modrinth.Data.SideRequirements.Required,
-                            ServerSide = Modrinth.Data.SideRequirements.Required,
-                            Description = item.Summary,
-                            Icon = item.Logo.ThumbnailUrl,
-                            Downloads = item.DownloadCount,
-                            LastUpdated = item.DateModified,
-                            ReleaseDate = item.DateCreated,
-                            Platform = Minecraft.Data.PlatformSource.Curseforge,
-                            IsDistributionAllowed = item.AllowModDistribution,
-                            Versions = Array.Empty<ResourceItemVersion>(),
-                            SupportedLoaders = Array.Empty<ModLoaders>(),
-                            Banner = "",
-                            GameVersions = new string[] { searchBuilder.minecraftVersions.First().ID },
-                            Categories = Array.Empty<string>(),
-                        });
+                            mods.Add(new()
+                            {
+                                ID = item.Id.ToString(),
+                                Title = item.Name,
+                                Author = item.Authors.FirstOrDefault().Name,
+                                ClientSide = Modrinth.Data.SideRequirements.Required,
+                                ServerSide = Modrinth.Data.SideRequirements.Required,
+                                Description = item.Summary,
+                                Icon = item.Logo.ThumbnailUrl,
+                                Downloads = item.DownloadCount,
+                                LastUpdated = item.DateModified,
+                                ReleaseDate = item.DateCreated,
+                                Platform = Minecraft.Data.PlatformSource.Curseforge,
+                                IsDistributionAllowed = item.AllowModDistribution,
+                                Versions = Array.Empty<ResourceItemVersion>(),
+                                SupportedLoaders = searchBuilder.loaders.ToArray(),
+                                Banner = "",
+                                GameVersions = new string[] { searchBuilder.minecraftVersions.First().ID },
+                                Categories = Array.Empty<string>(),
+                            });
+                        }
                     }
                 }
             }
         }
 
         stopwatch.Stop();
-        mods = mods.Distinct().ToList();
-        FuzzySearchAlgorithm search = new();
-        search.Add(mods.Select(i => i.Title).ToArray());
-        string[]? items = search.Search(searchBuilder.query, searchBuilder.limit);
-        if (items != null)
+        //mods = mods.Distinct().ToList();
+        if (!string.IsNullOrWhiteSpace(searchBuilder.query))
         {
-            mods = mods.OrderByDescending(mod => items.Select((title, index) => (title, index)).FirstOrDefault(tuple => tuple.title == mod.Title).index).ToList();
+            FuzzySearchAlgorithm search = new();
+            search.Add(mods.Select(i => i.Title).ToArray());
+            string[]? items = search.Search(searchBuilder.query, searchBuilder.limit);
+            if (items != null)
+            {
+                mods = mods.OrderByDescending(mod => items.Select((title, index) => (title, index)).FirstOrDefault(tuple => tuple.title == mod.Title).index).ToList();
+            }
         }
-
         return new SearchResults<Mod>()
         {
             Duration = stopwatch.Elapsed,
