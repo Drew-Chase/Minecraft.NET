@@ -302,23 +302,23 @@ public static class MultiPlatformInteropClient
             {
                 totalResults += result.Value.TotalHits;
                 Modrinth.Model.ModrinthSearchResultItem[] hits = result.Value.Hits;
-                foreach (var items in hits)
+                foreach (var item in hits)
                 {
                     packs.Add(new()
                     {
-                        ID = items.ProjectId,
-                        Title = items.Title,
-                        Description = items.Description,
-                        Author = items.Author,
-                        Icon = items.IconUrl,
-                        Banner = items.FeaturedGallery,
-                        Categories = items.Categories,
-                        Downloads = items.Downloads,
+                        ID = item.ProjectId,
+                        Title = item.Title,
+                        Description = item.Description,
+                        Author = item.Author,
+                        Icon = item.IconUrl,
+                        Banner = item.FeaturedGallery,
+                        Categories = item.Categories,
+                        Downloads = item.Downloads,
                         Platform = Minecraft.Data.PlatformSource.Modrinth,
-                        GameVersions = items.Versions,
+                        GameVersions = item.Versions,
                         Versions = Array.Empty<ResourceItemVersion>(),
-                        ReleaseDate = items.DateCreated,
-                        LastUpdated = items.DateModified,
+                        ReleaseDate = item.DateCreated,
+                        LastUpdated = item.DateModified,
                         IsDistributionAllowed = true,
                         Website = $"https://modrinth.com/resourcepack/{item.Slug}"
                     });
