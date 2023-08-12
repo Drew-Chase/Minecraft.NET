@@ -60,27 +60,28 @@ public static class MultiPlatformInteropClient
             {
                 totalResults += result.Value.TotalHits;
                 Modrinth.Model.ModrinthSearchResultItem[] hits = result.Value.Hits;
-                foreach (var hit in hits)
+                foreach (var item in hits)
                 {
                     mods.Add(new()
                     {
-                        ID = hit.ProjectId,
-                        Title = hit.Title,
-                        Description = hit.Description,
-                        Author = hit.Author,
-                        Icon = hit.IconUrl,
-                        Banner = hit.FeaturedGallery,
-                        Categories = hit.Categories,
-                        ClientSide = hit.ClientSide,
-                        ServerSide = hit.ServerSide,
-                        Downloads = hit.Downloads,
+                        ID = item.ProjectId,
+                        Title = item.Title,
+                        Description = item.Description,
+                        Author = item.Author,
+                        Icon = item.IconUrl,
+                        Banner = item.FeaturedGallery,
+                        Categories = item.Categories,
+                        ClientSide = item.ClientSide,
+                        ServerSide = item.ServerSide,
+                        Downloads = item.Downloads,
                         Platform = Minecraft.Data.PlatformSource.Modrinth,
-                        GameVersions = hit.Versions,
+                        GameVersions = item.Versions,
                         Versions = Array.Empty<ResourceItemVersion>(),
                         SupportedLoaders = searchBuilder.loaders.ToArray(),
-                        ReleaseDate = hit.DateCreated,
-                        LastUpdated = hit.DateModified,
+                        ReleaseDate = item.DateCreated,
+                        LastUpdated = item.DateModified,
                         IsDistributionAllowed = true,
+                        Website = $"https://modrinth.com/mod/{item.Slug}"
                     });
                 }
             }
@@ -119,6 +120,7 @@ public static class MultiPlatformInteropClient
                                 Banner = "",
                                 GameVersions = new string[] { searchBuilder.minecraftVersions.First().ID },
                                 Categories = Array.Empty<string>(),
+                                Website = $"https://curseforge.com/minecraft/mc-mods/{item.Slug}"
                             });
                         }
                     }
@@ -189,25 +191,26 @@ public static class MultiPlatformInteropClient
             {
                 totalResults += result.Value.TotalHits;
                 Modrinth.Model.ModrinthSearchResultItem[] hits = result.Value.Hits;
-                foreach (var hit in hits)
+                foreach (var item in hits)
                 {
                     packs.Add(new()
                     {
-                        ID = hit.ProjectId,
-                        Title = hit.Title,
-                        Description = hit.Description,
-                        Author = hit.Author,
-                        Icon = hit.IconUrl,
-                        Banner = hit.FeaturedGallery,
-                        Categories = hit.Categories,
-                        Downloads = hit.Downloads,
+                        ID = item.ProjectId,
+                        Title = item.Title,
+                        Description = item.Description,
+                        Author = item.Author,
+                        Icon = item.IconUrl,
+                        Banner = item.FeaturedGallery,
+                        Categories = item.Categories,
+                        Downloads = item.Downloads,
                         Platform = Minecraft.Data.PlatformSource.Modrinth,
-                        GameVersions = hit.Versions,
+                        GameVersions = item.Versions,
                         Versions = Array.Empty<ResourceItemVersion>(),
                         SupportedLoaders = Array.Empty<ModLoaders>(),
-                        ReleaseDate = hit.DateCreated,
-                        LastUpdated = hit.DateModified,
+                        ReleaseDate = item.DateCreated,
+                        LastUpdated = item.DateModified,
                         IsDistributionAllowed = true,
+                        Website = $"https://modrinth.com/modpack/{item.Slug}"
                     });
                 }
             }
@@ -241,6 +244,7 @@ public static class MultiPlatformInteropClient
                             Banner = "",
                             GameVersions = new string[] { searchBuilder.minecraftVersions.First().ID },
                             Categories = Array.Empty<string>(),
+                            Website = $"https://curseforge.com.com/minecraft/modpacks/{item.Slug}"
                         });
                     }
                 }
@@ -298,24 +302,25 @@ public static class MultiPlatformInteropClient
             {
                 totalResults += result.Value.TotalHits;
                 Modrinth.Model.ModrinthSearchResultItem[] hits = result.Value.Hits;
-                foreach (var hit in hits)
+                foreach (var items in hits)
                 {
                     packs.Add(new()
                     {
-                        ID = hit.ProjectId,
-                        Title = hit.Title,
-                        Description = hit.Description,
-                        Author = hit.Author,
-                        Icon = hit.IconUrl,
-                        Banner = hit.FeaturedGallery,
-                        Categories = hit.Categories,
-                        Downloads = hit.Downloads,
+                        ID = items.ProjectId,
+                        Title = items.Title,
+                        Description = items.Description,
+                        Author = items.Author,
+                        Icon = items.IconUrl,
+                        Banner = items.FeaturedGallery,
+                        Categories = items.Categories,
+                        Downloads = items.Downloads,
                         Platform = Minecraft.Data.PlatformSource.Modrinth,
-                        GameVersions = hit.Versions,
+                        GameVersions = items.Versions,
                         Versions = Array.Empty<ResourceItemVersion>(),
-                        ReleaseDate = hit.DateCreated,
-                        LastUpdated = hit.DateModified,
+                        ReleaseDate = items.DateCreated,
+                        LastUpdated = items.DateModified,
                         IsDistributionAllowed = true,
+                        Website = $"https://modrinth.com/resourcepack/{item.Slug}"
                     });
                 }
             }
@@ -348,6 +353,7 @@ public static class MultiPlatformInteropClient
                             Banner = "",
                             GameVersions = new string[] { searchBuilder.minecraftVersions.First().ID },
                             Categories = Array.Empty<string>(),
+                            Website = $"https://curseforge.com/minecraft/texture-packs/{item.Slug}"
                         });
                     }
                 }
@@ -413,6 +419,7 @@ public static class MultiPlatformInteropClient
                             Banner = "",
                             GameVersions = new string[] { searchBuilder.minecraftVersions.First().ID },
                             Categories = Array.Empty<string>(),
+                            Website = $"https://curseforge.com/minecraft/worlds/{item.Slug}"
                         });
                     }
                 }
@@ -469,24 +476,25 @@ public static class MultiPlatformInteropClient
             {
                 totalResults += result.Value.TotalHits;
                 Modrinth.Model.ModrinthSearchResultItem[] hits = result.Value.Hits;
-                foreach (var hit in hits)
+                foreach (var item in hits)
                 {
                     packs.Add(new()
                     {
-                        ID = hit.ProjectId,
-                        Title = hit.Title,
-                        Description = hit.Description,
-                        Author = hit.Author,
-                        Icon = hit.IconUrl,
-                        Banner = hit.FeaturedGallery,
-                        Categories = hit.Categories,
-                        Downloads = hit.Downloads,
+                        ID = item.ProjectId,
+                        Title = item.Title,
+                        Description = item.Description,
+                        Author = item.Author,
+                        Icon = item.IconUrl,
+                        Banner = item.FeaturedGallery,
+                        Categories = item.Categories,
+                        Downloads = item.Downloads,
                         Platform = Minecraft.Data.PlatformSource.Modrinth,
-                        GameVersions = hit.Versions,
+                        GameVersions = item.Versions,
                         Versions = Array.Empty<ResourceItemVersion>(),
-                        ReleaseDate = hit.DateCreated,
-                        LastUpdated = hit.DateModified,
+                        ReleaseDate = item.DateCreated,
+                        LastUpdated = item.DateModified,
                         IsDistributionAllowed = true,
+                        Website = $"https://modrinth.com/shader/{item.Slug}"
                     });
                 }
             }
@@ -534,24 +542,25 @@ public static class MultiPlatformInteropClient
             {
                 totalResults += result.Value.TotalHits;
                 Modrinth.Model.ModrinthSearchResultItem[] hits = result.Value.Hits;
-                foreach (var hit in hits)
+                foreach (var item in hits)
                 {
                     packs.Add(new()
                     {
-                        ID = hit.ProjectId,
-                        Title = hit.Title,
-                        Description = hit.Description,
-                        Author = hit.Author,
-                        Icon = hit.IconUrl,
-                        Banner = hit.FeaturedGallery,
-                        Categories = hit.Categories,
-                        Downloads = hit.Downloads,
+                        ID = item.ProjectId,
+                        Title = item.Title,
+                        Description = item.Description,
+                        Author = item.Author,
+                        Icon = item.IconUrl,
+                        Banner = item.FeaturedGallery,
+                        Categories = item.Categories,
+                        Downloads = item.Downloads,
                         Platform = Minecraft.Data.PlatformSource.Modrinth,
-                        GameVersions = hit.Versions,
+                        GameVersions = item.Versions,
                         Versions = Array.Empty<ResourceItemVersion>(),
-                        ReleaseDate = hit.DateCreated,
-                        LastUpdated = hit.DateModified,
+                        ReleaseDate = item.DateCreated,
+                        LastUpdated = item.DateModified,
                         IsDistributionAllowed = true,
+                        Website = $"https://modrinth.com/datapack/{item.Slug}"
                     });
                 }
             }

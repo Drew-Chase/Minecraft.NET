@@ -25,4 +25,5 @@ public abstract class ResourceItemBase
     public DateTime LastUpdated { get; set; }
     public PlatformSource Platform { get; set; }
     public bool IsDistributionAllowed { get; set; }
+    public string Website { get; set; }
 }
