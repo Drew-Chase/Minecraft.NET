@@ -10,6 +10,7 @@ namespace Chase.Minecraft.Data;
 public enum PlatformSource
 {
     Unknown,
+    ALL,
     Curseforge,
     Modrinth,
     ATLauncher,
