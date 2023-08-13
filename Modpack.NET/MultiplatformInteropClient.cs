@@ -19,6 +19,8 @@ namespace Chase.Minecraft.Modpacks;
 /// </summary>
 public static class MultiPlatformInteropClient
 {
+    private static FuzzySearchAlgorithm search = new(int.MaxValue);
+
     /// <summary>
     /// Searches for mods based on the provided search criteria.
     /// </summary>
@@ -129,10 +131,8 @@ public static class MultiPlatformInteropClient
         }
 
         stopwatch.Stop();
-        //mods = mods.Distinct().ToList();
         if (!string.IsNullOrWhiteSpace(searchBuilder.query))
         {
-            FuzzySearchAlgorithm search = new();
             search.Add(mods.Select(i => i.Title).ToArray());
             string[]? items = search.Search(searchBuilder.query, searchBuilder.limit);
             if (items != null)
@@ -253,7 +253,6 @@ public static class MultiPlatformInteropClient
 
         stopwatch.Stop();
         packs = packs.Distinct().ToList();
-        FuzzySearchAlgorithm search = new();
         search.Add(packs.Select(i => i.Title).ToArray());
         string[]? items = search.Search(searchBuilder.query, searchBuilder.limit);
         if (items != null)
@@ -362,7 +361,6 @@ public static class MultiPlatformInteropClient
 
         stopwatch.Stop();
         packs = packs.Distinct().ToList();
-        FuzzySearchAlgorithm search = new();
         search.Add(packs.Select(i => i.Title).ToArray());
         string[]? items = search.Search(searchBuilder.query, searchBuilder.limit);
         if (items != null)
@@ -427,7 +425,6 @@ public static class MultiPlatformInteropClient
         }
 
         stopwatch.Stop();
-        FuzzySearchAlgorithm search = new();
         search.Add(packs.Select(i => i.Title).ToArray());
         string[]? items = search.Search(searchBuilder.query, searchBuilder.limit);
         if (items != null)
