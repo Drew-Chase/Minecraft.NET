@@ -255,6 +255,35 @@ public class CurseforgeClient : IDisposable
     public Task<ModFile?> GetWorldFile(string id, string fileId) => GetProjectFile(id, fileId, WORLDS_SECTION_ID);
 
     /// <summary>
+    /// Gets the projects page description as HTML.
+    /// </summary>
+    /// <param name="id"></param>
+    /// <returns></returns>
+    public async Task<string?> GetProjectDescription(string id)
+    {
+        string url = $"{BASE_URI}mods/{id}/description";
+
+        using HttpRequestMessage request = new(HttpMethod.Get, url);
+        request.Headers.Add("x-api-key", _api);
+        return (await _client.GetAsJson(request))?["data"]?.ToObject<string>();
+    }
+
+    /// <summary>
+    /// Gets the projects version changelog as HTML.
+    /// </summary>
+    /// <param name="project_id"></param>
+    /// <param name="version_id"></param>
+    /// <returns></returns>
+    public async Task<string?> GetProjectVersionDescription(string project_id, string version_id)
+    {
+        string url = $"{BASE_URI}mods/{project_id}/{version_id}/changelog";
+
+        using HttpRequestMessage request = new(HttpMethod.Get, url);
+        request.Headers.Add("x-api-key", _api);
+        return (await _client.GetAsJson(request))?["data"]?.ToObject<string>();
+    }
+
+    /// <summary>
     /// Retrieves detailed information about a specific project (mod, modpack, resource pack, or
     /// world) asynchronously.
     /// </summary>
