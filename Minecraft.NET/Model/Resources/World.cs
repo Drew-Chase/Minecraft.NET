@@ -5,12 +5,8 @@
     https://www.gnu.org/licenses/gpl-3.0.en.html#license-text
 */
 
-namespace Chase.Minecraft.Modrinth.Data;
+namespace Chase.Minecraft.Model.Resources;
 
-public enum ModrinthProjectTypes
+public sealed class World : ResourceItemBase
 {
-    Mod,
-    Modpack,
-    Shader,
-    Resourcepack,
 }

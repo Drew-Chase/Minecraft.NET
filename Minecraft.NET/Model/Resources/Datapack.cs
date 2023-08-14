@@ -5,11 +5,8 @@
     https://www.gnu.org/licenses/gpl-3.0.en.html#license-text
 */
 
-namespace Chase.Minecraft.Modrinth.Data;
+namespace Chase.Minecraft.Model.Resources;
 
-public enum SideRequirements
+public sealed class Datapack : ResourceItemBase
 {
-    Unsupported,
-    Required,
-    Optional
 }

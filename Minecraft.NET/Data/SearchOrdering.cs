@@ -5,8 +5,13 @@
     https://www.gnu.org/licenses/gpl-3.0.en.html#license-text
 */
 
-namespace Chase.Minecraft.Modpacks.Model;
+namespace Chase.Minecraft.Data;
 
-public sealed class Plugins : ResourceItemBase
+public enum SearchOrdering
 {
+    Relevance,
+    Downloads,
+    Follows,
+    Newest,
+    Updated
 }

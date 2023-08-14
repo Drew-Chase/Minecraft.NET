@@ -5,12 +5,13 @@
     https://www.gnu.org/licenses/gpl-3.0.en.html#license-text
 */
 
-namespace Chase.Minecraft.Modpacks.Data;
+using Chase.Minecraft.Data;
 
-public enum ReleaseType
+namespace Chase.Minecraft.Model.Resources;
+
+public sealed class Mod : ResourceItemBase
 {
-    Unknown,
-    Alpha,
-    Beta,
-    Release
+    public ModLoaders[] SupportedLoaders { get; set; }
+    public SideRequirements ClientSide { get; set; }
+    public SideRequirements ServerSide { get; set; }
 }

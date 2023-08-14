@@ -5,13 +5,13 @@
     https://www.gnu.org/licenses/gpl-3.0.en.html#license-text
 */
 
-using Chase.Minecraft.Modrinth.Data;
+namespace Chase.Minecraft.Model.Resources;
 
-namespace Chase.Minecraft.Modpacks.Model;
-
-public sealed class Mod : ResourceItemBase
+public sealed class SearchResults<T>
 {
-    public ModLoaders[] SupportedLoaders { get; set; }
-    public SideRequirements ClientSide { get; set; }
-    public SideRequirements ServerSide { get; set; }
+    public T[] Results { get; set; }
+    public int TotalResults { get; set; }
+    public int Limit { get; set; }
+    public int Offset { get; set; }
+    public TimeSpan Duration { get; set; }
 }

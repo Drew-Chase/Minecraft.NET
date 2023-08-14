@@ -5,8 +5,8 @@
     https://www.gnu.org/licenses/gpl-3.0.en.html#license-text
 */
 
-namespace Chase.Minecraft.Modpacks.Model;
+namespace Chase.Minecraft.Model.Resources;
 
-public sealed class Datapack : ResourceItemBase
+public sealed class Plugins : ResourceItemBase
 {
 }

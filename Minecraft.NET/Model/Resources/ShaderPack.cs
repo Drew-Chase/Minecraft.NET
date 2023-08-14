@@ -5,13 +5,8 @@
     https://www.gnu.org/licenses/gpl-3.0.en.html#license-text
 */
 
-namespace Chase.Minecraft.Modrinth.Data;
+namespace Chase.Minecraft.Model.Resources;
 
-public enum SearchOrdering
+public sealed class ShaderPack : ResourceItemBase
 {
-    Relevance,
-    Downloads,
-    Follows,
-    Newest,
-    Updated
 }

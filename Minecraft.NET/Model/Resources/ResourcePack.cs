@@ -5,13 +5,9 @@
     https://www.gnu.org/licenses/gpl-3.0.en.html#license-text
 */
 
-namespace Chase.Minecraft.Modpacks.Model;
+namespace Chase.Minecraft.Model.Resources;
 
-public sealed class SearchResults<T>
+public sealed class ResourcePack : ResourceItemBase
 {
-    public T[] Results { get; set; }
-    public int TotalResults { get; set; }
-    public int Limit { get; set; }
-    public int Offset { get; set; }
-    public TimeSpan Duration { get; set; }
+    public string[] Resolutions { get; set; }
 }

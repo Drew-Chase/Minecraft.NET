@@ -5,7 +5,7 @@
     https://www.gnu.org/licenses/gpl-3.0.en.html#license-text
 */
 
-using Chase.Minecraft.Modrinth.Data;
+using Chase.Minecraft.Data;
 using Newtonsoft.Json;
 
 namespace Chase.Minecraft.Modrinth.Model;

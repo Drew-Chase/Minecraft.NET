@@ -7,7 +7,7 @@
 
 namespace Chase.Minecraft.Modrinth.Model;
 
-using Chase.Minecraft.Modrinth.Data;
+using Chase.Minecraft.Data;
 using Newtonsoft.Json;
 
 public struct ModrinthProject

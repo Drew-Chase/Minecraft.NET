@@ -5,9 +5,12 @@
     https://www.gnu.org/licenses/gpl-3.0.en.html#license-text
 */
 
-namespace Chase.Minecraft.Modpacks.Model;
+namespace Chase.Minecraft.Modrinth.Data;
 
-public sealed class ResourcePack : ResourceItemBase
+public enum ProjectTypes
 {
-    public string[] Resolutions { get; set; }
+    Mod,
+    Modpack,
+    Shader,
+    Resourcepack,
 }

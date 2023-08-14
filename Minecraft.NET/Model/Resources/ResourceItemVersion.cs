@@ -5,9 +5,9 @@
     https://www.gnu.org/licenses/gpl-3.0.en.html#license-text
 */
 
-using Chase.Minecraft.Modpacks.Data;
+using Chase.Minecraft.Data;
 
-namespace Chase.Minecraft.Modpacks.Model;
+namespace Chase.Minecraft.Model.Resources;
 
 public abstract class ResourceItemVersion
 {

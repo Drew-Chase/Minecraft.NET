@@ -5,14 +5,12 @@
     https://www.gnu.org/licenses/gpl-3.0.en.html#license-text
 */
 
-namespace Chase.Minecraft.Modpacks.Data;
+namespace Chase.Minecraft.Data;
 
-public enum ShaderPerformanceImpact
+public enum ReleaseType
 {
     Unknown,
-    Potato,
-    Low,
-    Medium,
-    High,
-    Screenshot
+    Alpha,
+    Beta,
+    Release
 }
