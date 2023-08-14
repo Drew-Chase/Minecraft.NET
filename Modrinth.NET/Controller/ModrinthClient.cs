@@ -170,7 +170,7 @@ public sealed class ModrinthClient : IDisposable
         string gameVersion = "";
         if (gameVersions != null && gameVersions.Any())
         {
-            gameVersion = $"&game_versions=[";
+            gameVersion = $"?game_versions=[";
             foreach (string version in gameVersions)
             {
                 gameVersion += $"\"{version}\",";
@@ -180,7 +180,15 @@ public sealed class ModrinthClient : IDisposable
         string loader = "";
         if (loaders != null && loaders.Any())
         {
-            loader = $"&loaders=[";
+            if (gameVersions.Any())
+            {
+                loader = "&";
+            }
+            else
+            {
+                loader = "?";
+            }
+            loader += "loaders=[";
             foreach (ModLoaders l in loaders)
             {
                 loader += $"\"{l}\",";
