@@ -40,12 +40,12 @@ public static class MultiPlatformInteropClient
             using ModrinthClient client = new();
             FacetBuilder builder = new();
 
-            if (!searchBuilder.minecraftVersions.Any())
+            if (searchBuilder.minecraftVersions.Any())
             {
                 builder.AddVersions(searchBuilder.minecraftVersions.Select(i => i.ID).ToArray());
             }
 
-            if (!searchBuilder.loaders.Any())
+            if (searchBuilder.loaders.Any())
             {
                 builder.AddModloaders(searchBuilder.loaders.ToArray());
             }
@@ -169,12 +169,12 @@ public static class MultiPlatformInteropClient
             using ModrinthClient client = new();
             FacetBuilder builder = new();
 
-            if (!searchBuilder.minecraftVersions.Any())
+            if (searchBuilder.minecraftVersions.Any())
             {
                 builder.AddVersions(searchBuilder.minecraftVersions.Select(i => i.ID).ToArray());
             }
 
-            if (!searchBuilder.loaders.Any())
+            if (searchBuilder.loaders.Any())
             {
                 builder.AddModloaders(searchBuilder.loaders.ToArray());
             }
