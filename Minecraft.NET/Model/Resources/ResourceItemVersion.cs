@@ -9,7 +9,7 @@ using Chase.Minecraft.Data;
 
 namespace Chase.Minecraft.Model.Resources;
 
-public abstract class ResourceItemVersion
+public class ResourceItemVersion
 {
     public string ID { get; set; }
     public string Changelog { get; set; }
