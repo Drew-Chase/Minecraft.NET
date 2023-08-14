@@ -9,6 +9,7 @@ using Chase.Minecraft.Model;
 using Chase.Minecraft.Modrinth.Model;
 using Chase.Networking;
 using Chase.Networking.Event;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace Chase.Minecraft.Modrinth.Controller;
@@ -165,9 +166,25 @@ public sealed class ModrinthClient : IDisposable
     /// <returns>
     /// A <see cref="Task"/> representing the asynchronous operation with the project versions.
     /// </returns>
-    public async Task<ModrinthVersionFile[]?> GetProjectVersionsAsync(string id)
+    public async Task<ModrinthVersionFile[]?> GetProjectVersionsAsync(string id, string[]? gameVersions = null, ModLoaders[]? loaders = null)
     {
-        HttpResponseMessage response = await _client.GetAsync($"{BASE_URL}project/{id}/version");
+        string gameVersion = "";
+        if (gameVersions != null && gameVersions.Any())
+        {
+            gameVersion = "&" + JsonConvert.SerializeObject(new
+            {
+                game_versions = gameVersions
+            });
+        }
+        string loader = "";
+        if (gameVersions != null && gameVersions.Any())
+        {
+            loader = "&" + JsonConvert.SerializeObject(new
+            {
+                loaders = Array.ConvertAll(loaders, i => i.ToString())
+            });
+        }
+        HttpResponseMessage response = await _client.GetAsync($"{BASE_URL}project/{id}/version{gameVersion}{loader}");
         if (response.IsSuccessStatusCode)
         {
             return JArray.Parse(await response.Content.ReadAsStringAsync()).ToObject<ModrinthVersionFile[]>();
@@ -180,7 +197,7 @@ public sealed class ModrinthClient : IDisposable
     /// </summary>
     /// <param name="id">The ID of the project for which to retrieve the versions.</param>
     /// <returns>The project versions, or null if the operation fails.</returns>
-    public ModrinthVersionFile[]? GetProjectVersions(string id) => GetProjectVersionsAsync(id).Result;
+    public ModrinthVersionFile[]? GetProjectVersions(string id, string[]? gameVersions = null, ModLoaders[]? loaders = null) => GetProjectVersionsAsync(id, gameVersions, loaders).Result;
 
     /// <summary>
     /// Downloads a specific version file from Modrinth and saves it to the specified output directory.
@@ -246,7 +263,9 @@ public sealed class ModrinthClient : IDisposable
     /// Flag indicating whether to ignore the patch version of the Minecraft version. If true, only
     /// the major and minor versions are considered for matching.
     /// </param>
-    /// <param name="requiredLoader">If set, this will only return version files with a specific mod loader</param>
+    /// <param name="requiredLoader">
+    /// If set, this will only return version files with a specific mod loader
+    /// </param>
     /// <returns>
     /// A <see cref="Task{TResult}"/> representing the asynchronous operation. The task result
     /// contains an array of <see cref="ModrinthVersionFile"/> objects that match the specified
