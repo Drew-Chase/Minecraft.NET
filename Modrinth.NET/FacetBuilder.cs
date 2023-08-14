@@ -111,7 +111,7 @@ public class FacetBuilder
     /// </summary>
     /// <param name="types">A list of project types. Ex: mod, modpack, resourcepack, etc</param>
     /// <returns></returns>
-    public FacetBuilder AddProjectTypes(params ModrinthProjectTypes[] types) => AddProjectTypes(Array.ConvertAll(types, i => i.ToString().ToLower()));
+    public FacetBuilder AddProjectTypes(params ProjectTypes[] types) => AddProjectTypes(Array.ConvertAll(types, i => i.ToString().ToLower()));
 
     /// <summary>
     /// Adds a facet for project types. If you add them all in one it will be considered an 'OR', or

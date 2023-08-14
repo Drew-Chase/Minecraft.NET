@@ -6,9 +6,12 @@
 */
 
 using Chase.Minecraft.Curseforge.Controller;
-using Chase.Minecraft.Modpacks.Model;
+using Chase.Minecraft.Data;
+using Chase.Minecraft.Model.Resources;
 using Chase.Minecraft.Modrinth;
 using Chase.Minecraft.Modrinth.Controller;
+using Chase.Minecraft.Modrinth.Data;
+using Chase.Minecraft.Modrinth.Model;
 using SearchNET.Algorithm;
 using System.Diagnostics;
 
@@ -47,7 +50,7 @@ public static class MultiPlatformInteropClient
                 builder.AddModloaders(searchBuilder.loaders.ToArray());
             }
 
-            builder.AddProjectTypes(Modrinth.Data.ModrinthProjectTypes.Mod);
+            builder.AddProjectTypes(ProjectTypes.Mod);
 
             Modrinth.Model.ModrinthSearchResult? result = await client.SearchAsync(new Modrinth.Model.ModrinthSearchQuery()
             {
@@ -55,7 +58,7 @@ public static class MultiPlatformInteropClient
                 Facets = builder,
                 Limit = 100,
                 Offset = searchBuilder.offset,
-                Ordering = Modrinth.Data.SearchOrdering.Relevance,
+                Ordering = SearchOrdering.Relevance,
             });
 
             if (result != null)
@@ -108,8 +111,8 @@ public static class MultiPlatformInteropClient
                                 ID = item.Id.ToString(),
                                 Title = item.Name,
                                 Author = item.Authors.FirstOrDefault().Name,
-                                ClientSide = Modrinth.Data.SideRequirements.Required,
-                                ServerSide = Modrinth.Data.SideRequirements.Required,
+                                ClientSide = SideRequirements.Required,
+                                ServerSide = SideRequirements.Required,
                                 Description = item.Summary,
                                 Icon = item.Logo.ThumbnailUrl,
                                 Downloads = item.DownloadCount,
@@ -176,7 +179,7 @@ public static class MultiPlatformInteropClient
                 builder.AddModloaders(searchBuilder.loaders.ToArray());
             }
 
-            builder.AddProjectTypes(Modrinth.Data.ModrinthProjectTypes.Modpack);
+            builder.AddProjectTypes(ProjectTypes.Modpack);
 
             Modrinth.Model.ModrinthSearchResult? result = await client.SearchAsync(new Modrinth.Model.ModrinthSearchQuery()
             {
@@ -184,7 +187,7 @@ public static class MultiPlatformInteropClient
                 Facets = builder,
                 Limit = 100,
                 Offset = searchBuilder.offset,
-                Ordering = Modrinth.Data.SearchOrdering.Relevance,
+                Ordering = SearchOrdering.Relevance,
             });
 
             if (result != null)
@@ -286,15 +289,15 @@ public static class MultiPlatformInteropClient
             using ModrinthClient client = new();
             FacetBuilder builder = new();
 
-            builder.AddProjectTypes(Modrinth.Data.ModrinthProjectTypes.Resourcepack);
+            builder.AddProjectTypes(ProjectTypes.Resourcepack);
 
-            Modrinth.Model.ModrinthSearchResult? result = await client.SearchAsync(new Modrinth.Model.ModrinthSearchQuery()
+            Modrinth.Model.ModrinthSearchResult? result = await client.SearchAsync(new ModrinthSearchQuery()
             {
                 Query = searchBuilder.query,
                 Facets = builder,
                 Limit = 100,
                 Offset = searchBuilder.offset,
-                Ordering = Modrinth.Data.SearchOrdering.Relevance,
+                Ordering = SearchOrdering.Relevance,
             });
 
             if (result != null)
@@ -458,21 +461,21 @@ public static class MultiPlatformInteropClient
             using ModrinthClient client = new();
             FacetBuilder builder = new();
 
-            builder.AddProjectTypes(Modrinth.Data.ModrinthProjectTypes.Shader);
+            builder.AddProjectTypes(ProjectTypes.Shader);
 
-            Modrinth.Model.ModrinthSearchResult? result = await client.SearchAsync(new Modrinth.Model.ModrinthSearchQuery()
+            ModrinthSearchResult? result = await client.SearchAsync(new ModrinthSearchQuery()
             {
                 Query = searchBuilder.query,
                 Facets = builder,
                 Limit = searchBuilder.limit,
                 Offset = searchBuilder.offset,
-                Ordering = Modrinth.Data.SearchOrdering.Relevance,
+                Ordering = SearchOrdering.Relevance,
             });
 
             if (result != null)
             {
                 totalResults += result.Value.TotalHits;
-                Modrinth.Model.ModrinthSearchResultItem[] hits = result.Value.Hits;
+                ModrinthSearchResultItem[] hits = result.Value.Hits;
                 foreach (var item in hits)
                 {
                     packs.Add(new()
@@ -519,20 +522,20 @@ public static class MultiPlatformInteropClient
         List<Datapack> packs = new();
         int totalResults = 0;
 
-        if (!searchBuilder.platforms.Any() || searchBuilder.platforms.Contains(Minecraft.Data.PlatformSource.Modrinth))
+        if (!searchBuilder.platforms.Any() || searchBuilder.platforms.Contains(PlatformSource.Modrinth))
         {
             using ModrinthClient client = new();
             FacetBuilder builder = new();
 
             builder.AddCategories("datapack");
 
-            Modrinth.Model.ModrinthSearchResult? result = await client.SearchAsync(new Modrinth.Model.ModrinthSearchQuery()
+            Modrinth.Model.ModrinthSearchResult? result = await client.SearchAsync(new ModrinthSearchQuery()
             {
                 Query = searchBuilder.query,
                 Facets = builder,
                 Limit = searchBuilder.limit,
                 Offset = searchBuilder.offset,
-                Ordering = Modrinth.Data.SearchOrdering.Relevance,
+                Ordering = SearchOrdering.Relevance,
             });
 
             if (result != null)

@@ -7,7 +7,7 @@
 
 using Chase.Minecraft.Data;
 
-namespace Chase.Minecraft.Modpacks.Model;
+namespace Chase.Minecraft.Model.Resources;
 
 public abstract class ResourceItemBase
 {

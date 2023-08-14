@@ -5,8 +5,14 @@
     https://www.gnu.org/licenses/gpl-3.0.en.html#license-text
 */
 
-namespace Chase.Minecraft.Modpacks.Model;
+namespace Chase.Minecraft.Data;
 
-public sealed class ShaderPack : ResourceItemBase
+public enum ShaderPerformanceImpact
 {
+    Unknown,
+    Potato,
+    Low,
+    Medium,
+    High,
+    Screenshot
 }

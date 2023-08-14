@@ -130,7 +130,7 @@ public static class ModpackUtils
             {
                 Query = name,
                 Limit = 3,
-                Ordering = Modrinth.Data.SearchOrdering.Relevance,
+                Ordering = SearchOrdering.Relevance,
                 Facets = facets
             });
             if (searchResults != null && searchResults.HasValue)
@@ -192,7 +192,7 @@ public static class ModpackUtils
             {
                 Query = name,
                 Limit = 3,
-                Ordering = Modrinth.Data.SearchOrdering.Relevance,
+                Ordering = SearchOrdering.Relevance,
                 Facets = facets
             });
             if (searchResults != null && searchResults.HasValue)
