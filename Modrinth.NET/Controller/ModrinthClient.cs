@@ -9,7 +9,6 @@ using Chase.Minecraft.Model;
 using Chase.Minecraft.Modrinth.Model;
 using Chase.Networking;
 using Chase.Networking.Event;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace Chase.Minecraft.Modrinth.Controller;
@@ -171,18 +170,22 @@ public sealed class ModrinthClient : IDisposable
         string gameVersion = "";
         if (gameVersions != null && gameVersions.Any())
         {
-            gameVersion = "&" + JsonConvert.SerializeObject(new
+            gameVersion = $"&game_versions=[";
+            foreach (string version in gameVersions)
             {
-                game_versions = gameVersions
-            });
+                gameVersion += $"\"{version}\",";
+            }
+            gameVersion = gameVersion.Trim(',').Trim() + "]";
         }
         string loader = "";
-        if (gameVersions != null && gameVersions.Any())
+        if (loaders != null && loaders.Any())
         {
-            loader = "&" + JsonConvert.SerializeObject(new
+            loader = $"&loaders=[";
+            foreach (ModLoaders l in loaders)
             {
-                loaders = Array.ConvertAll(loaders, i => i.ToString())
-            });
+                loader += $"\"{l}\",";
+            }
+            loader = loader.Trim(',').Trim() + "]";
         }
         HttpResponseMessage response = await _client.GetAsync($"{BASE_URL}project/{id}/version{gameVersion}{loader}");
         if (response.IsSuccessStatusCode)
