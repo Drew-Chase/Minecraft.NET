@@ -9,7 +9,7 @@ using Chase.Minecraft.Modpacks.Data;
 
 namespace Chase.Minecraft.Modpacks.Model;
 
-public sealed class ResourceItemVersion
+public class ResourceItemVersion
 {
     public string ID { get; set; }
     public string Changelog { get; set; }
