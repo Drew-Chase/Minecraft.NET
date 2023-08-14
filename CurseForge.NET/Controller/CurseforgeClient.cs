@@ -1,8 +1,9 @@
 ﻿/*
-    Minecraft.NET - LFInteractive LLC. 2021-2024﻿
-    Minecraft.NET and its libraries are a collection of minecraft related libraries to handle downloading mods, modpacks, resourcepacks, and downloading and installing modloaders (fabric, forge, etc)
-    Licensed under GPL-3.0
+    PolygonMC - LFInteractive LLC. 2021-2024
+    PolygonMC is a free and open source Minecraft Launcher implementing various modloaders, mod platforms, and minecraft authentication.
+    PolygonMC is protected under GNU GENERAL PUBLIC LICENSE version 3.0 License
     https://www.gnu.org/licenses/gpl-3.0.en.html#license-text
+    https://github.com/DcmanProductions/PolygonMC
 */
 
 // Ignore Spelling: Curseforge
@@ -11,6 +12,7 @@ using Chase.Minecraft.Curseforge.Model;
 using Chase.Minecraft.Model;
 using Chase.Networking;
 using Chase.Networking.Event;
+using Newtonsoft.Json.Linq;
 
 namespace Chase.Minecraft.Curseforge.Controller;
 
@@ -274,13 +276,22 @@ public class CurseforgeClient : IDisposable
     /// <param name="project_id"></param>
     /// <param name="version_id"></param>
     /// <returns></returns>
-    public async Task<string?> GetProjectVersionDescription(string project_id, string version_id)
+    public async Task<string> GetProjectVersionDescription(string project_id, string version_id)
     {
-        string url = $"{BASE_URI}mods/{project_id}/{version_id}/changelog";
+        string url = $"{BASE_URI}mods/{project_id}/files/{version_id}/changelog";
 
         using HttpRequestMessage request = new(HttpMethod.Get, url);
         request.Headers.Add("x-api-key", _api);
-        return (await _client.GetAsJson(request))?["data"]?.ToObject<string>();
+        JObject? json = await _client.GetAsJson(request);
+        if (json != null)
+        {
+            if (json.ContainsKey("data"))
+            {
+                string cl = json["data"]?.ToObject<string>() ?? "";
+                return cl;
+            }
+        }
+        return "";
     }
 
     /// <summary>
