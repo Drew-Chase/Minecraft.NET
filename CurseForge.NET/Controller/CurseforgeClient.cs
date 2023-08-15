@@ -172,90 +172,6 @@ public class CurseforgeClient : IDisposable
     }
 
     /// <summary>
-    /// Retrieves mod files associated with a specific mod asynchronously.
-    /// </summary>
-    /// <param name="id">The unique identifier of the mod.</param>
-    /// <returns>
-    /// A task representing the asynchronous operation. The result contains an array of mod files
-    /// associated with the mod.
-    /// </returns>
-    public Task<ModFile[]?> GetModFiles(string id) => GetProjectFiles(id, MODS_SECTION_ID);
-
-    /// <summary>
-    /// Retrieves modpack files associated with a specific modpack asynchronously.
-    /// </summary>
-    /// <param name="id">The unique identifier of the modpack.</param>
-    /// <returns>
-    /// A task representing the asynchronous operation. The result contains an array of modpack
-    /// files associated with the modpack.
-    /// </returns>
-    public Task<ModFile[]?> GetModpackFiles(string id) => GetProjectFiles(id, MODPACKS_SECTION_ID);
-
-    /// <summary>
-    /// Retrieves resource pack files associated with a specific resource pack asynchronously.
-    /// </summary>
-    /// <param name="id">The unique identifier of the resource pack.</param>
-    /// <returns>
-    /// A task representing the asynchronous operation. The result contains an array of resource
-    /// pack files associated with the resource pack.
-    /// </returns>
-    public Task<ModFile[]?> GetResourcepackFiles(string id) => GetProjectFiles(id, RESOURCE_PACKS_SECTION_ID);
-
-    /// <summary>
-    /// Retrieves world files associated with a specific world asynchronously.
-    /// </summary>
-    /// <param name="id">The unique identifier of the world.</param>
-    /// <returns>
-    /// A task representing the asynchronous operation. The result contains an array of world files
-    /// associated with the world.
-    /// </returns>
-    public Task<ModFile[]?> GetWorldFiles(string id) => GetProjectFiles(id, WORLDS_SECTION_ID);
-
-    /// <summary>
-    /// Retrieves information about a specific mod file associated with a mod asynchronously.
-    /// </summary>
-    /// <param name="id">The unique identifier of the mod.</param>
-    /// <param name="fileId">The unique identifier of the mod file.</param>
-    /// <returns>
-    /// A task representing the asynchronous operation. The result contains detailed information
-    /// about the mod file.
-    /// </returns>
-    public Task<ModFile?> GetModFile(string id, string fileId) => GetProjectFile(id, fileId, MODS_SECTION_ID);
-
-    /// <summary>
-    /// Retrieves information about a specific modpack file associated with a modpack asynchronously.
-    /// </summary>
-    /// <param name="id">The unique identifier of the modpack.</param>
-    /// <param name="fileId">The unique identifier of the modpack file.</param>
-    /// <returns>
-    /// A task representing the asynchronous operation. The result contains detailed information
-    /// about the modpack file.
-    /// </returns>
-    public Task<ModFile?> GetModpackFile(string id, string fileId) => GetProjectFile(id, fileId, MODPACKS_SECTION_ID);
-
-    /// <summary>
-    /// Retrieves information about a specific resource pack file associated with a resource pack asynchronously.
-    /// </summary>
-    /// <param name="id">The unique identifier of the resource pack.</param>
-    /// <param name="fileId">The unique identifier of the resource pack file.</param>
-    /// <returns>
-    /// A task representing the asynchronous operation. The result contains detailed information
-    /// about the resource pack file.
-    /// </returns>
-    public Task<ModFile?> GetResourcepackFile(string id, string fileId) => GetProjectFile(id, fileId, RESOURCE_PACKS_SECTION_ID);
-
-    /// <summary>
-    /// Retrieves information about a specific world file associated with a world asynchronously.
-    /// </summary>
-    /// <param name="id">The unique identifier of the world.</param>
-    /// <param name="fileId">The unique identifier of the world file.</param>
-    /// <returns>
-    /// A task representing the asynchronous operation. The result contains detailed information
-    /// about the world file.
-    /// </returns>
-    public Task<ModFile?> GetWorldFile(string id, string fileId) => GetProjectFile(id, fileId, WORLDS_SECTION_ID);
-
-    /// <summary>
     /// Gets the projects page description as HTML.
     /// </summary>
     /// <param name="id"></param>
@@ -294,6 +210,66 @@ public class CurseforgeClient : IDisposable
     }
 
     /// <summary>
+    /// Retrieves project files associated with a specific project (mod, modpack, resource pack, or
+    /// world) asynchronously.
+    /// </summary>
+    /// <param name="id">The unique identifier of the project.</param>
+    /// <returns>
+    /// A task representing the asynchronous operation. The result contains an array of project
+    /// files associated with the project.
+    /// </returns>
+    public async Task<ModFile[]?> GetProjectFiles(string id)
+    {
+        using HttpRequestMessage request = new(HttpMethod.Get, $"{BASE_URI}mods/{id}/files");
+        request.Headers.Add("x-api-key", _api);
+        return (await _client.GetAsJson(request))?["data"]?.ToObject<ModFile[]>();
+    }
+
+    /// <summary>
+    /// Retrieves information about a specific project file associated with a project asynchronously.
+    /// </summary>
+    /// <param name="id">The unique identifier of the project.</param>
+    /// <param name="fileId">The unique identifier of the project file.</param>
+    /// <returns>
+    /// A task representing the asynchronous operation. The result contains detailed information
+    /// about the project file.
+    /// </returns>
+    public async Task<ModFile?> GetProjectFile(string id, string fileId) => (await _client.GetAsJson($"{BASE_URI}mods/{id}/files/{fileId}"))?["data"]?.ToObject<ModFile>();
+
+    /// <summary>
+    /// Retrieves the latest project file for a specific project, optionally filtered by game
+    /// version and loader.
+    /// </summary>
+    /// <param name="id">The unique identifier of the project.</param>
+    /// <param name="gameVersion">
+    /// Optional. The version of the game for which to retrieve the project file. If not specified,
+    /// all versions are considered.
+    /// </param>
+    /// <param name="loader">
+    /// Optional. The loader used for the mod. If not specified, all loaders are considered.
+    /// </param>
+    /// <returns>
+    /// The latest project file associated with the specified project, game version, and loader (if
+    /// provided), or null if no such project file is found.
+    /// </returns>
+    /// <remarks>
+    /// This method fetches project files for the provided project ID and filters them based on the
+    /// specified game version (if provided) and loader (if provided). It then returns the latest
+    /// project file based on the date of the file.
+    /// </remarks>
+    public async Task<ModFile?> GetLatestProjectFile(string id, string? gameVersion = null, ModLoaders? loader = null)
+    {
+        ModFile[]? files = await GetProjectFiles(id);
+
+        if (files != null && files.Any())
+        {
+            return files.OrderByDescending(i => i.FileDate).FirstOrDefault(i => (gameVersion == null || i.GameVersions.Contains(gameVersion)) && (loader == null || i.GameVersions.Contains(loader.ToString())));
+        }
+
+        return null;
+    }
+
+    /// <summary>
     /// Retrieves detailed information about a specific project (mod, modpack, resource pack, or
     /// world) asynchronously.
     /// </summary>
@@ -309,35 +285,6 @@ public class CurseforgeClient : IDisposable
         request.Headers.Add("x-api-key", _api);
         return (await _client.GetAsJson(request))?["data"]?.ToObject<CurseforgeProject>();
     }
-
-    /// <summary>
-    /// Retrieves project files associated with a specific project (mod, modpack, resource pack, or
-    /// world) asynchronously.
-    /// </summary>
-    /// <param name="id">The unique identifier of the project.</param>
-    /// <param name="classId">The class ID for the type of project.</param>
-    /// <returns>
-    /// A task representing the asynchronous operation. The result contains an array of project
-    /// files associated with the project.
-    /// </returns>
-    private async Task<ModFile[]?> GetProjectFiles(string id, int classId)
-    {
-        using HttpRequestMessage request = new(HttpMethod.Get, $"{BASE_URI}mods/{id}/files?gameId={GAME_ID}&classId={classId}");
-        request.Headers.Add("x-api-key", _api);
-        return (await _client.GetAsJson(request))?["data"]?.ToObject<ModFile[]>();
-    }
-
-    /// <summary>
-    /// Retrieves information about a specific project file associated with a project asynchronously.
-    /// </summary>
-    /// <param name="id">The unique identifier of the project.</param>
-    /// <param name="fileId">The unique identifier of the project file.</param>
-    /// <param name="classId">The class ID for the type of project.</param>
-    /// <returns>
-    /// A task representing the asynchronous operation. The result contains detailed information
-    /// about the project file.
-    /// </returns>
-    private async Task<ModFile?> GetProjectFile(string id, string fileId, int classId) => (await _client.GetAsJson($"{BASE_URI}mods/{id}/files/{fileId}?gameId={GAME_ID}&classId={classId}"))?["data"]?.ToObject<ModFile>();
 
     /// <summary>
     /// Searches for content that matches the specified criteria asynchronously.
