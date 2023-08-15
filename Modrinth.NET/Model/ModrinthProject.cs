@@ -8,6 +8,7 @@
 namespace Chase.Minecraft.Modrinth.Model;
 
 using Chase.Minecraft.Data;
+using Chase.Minecraft.Model.Resources;
 using Newtonsoft.Json;
 
 public struct ModrinthProject
@@ -104,6 +105,31 @@ public struct ModrinthProject
 
     [JsonProperty("gallery")]
     public GalleryItem[] Gallery { get; set; }
+
+    /// <summary>
+    /// Converts the Modrinth Project to a generic mod object
+    /// </summary>
+    /// <returns></returns>
+    public readonly Mod ToGenericMod() => new()
+    {
+        ID = ProjectId,
+        Title = Title,
+        Author = Team,
+        Description = Description,
+        Downloads = Downloads,
+        Icon = IconUrl,
+        Banner = Gallery.FirstOrDefault(i => i.Featured).Url,
+        Versions = Array.Empty<ResourceItemVersion>(),
+        GameVersions = GameVersions,
+        Categories = Categories,
+        ReleaseDate = DateTime.Parse(Published),
+        LastUpdated = DateTime.Parse(Updated),
+        Platform = PlatformSource.Modrinth,
+        IsDistributionAllowed = true,
+        SupportedLoaders = Loaders.Select(loader => (ModLoaders)Enum.Parse(typeof(ModLoaders), loader)).ToArray(),
+        ClientSide = ClientSide,
+        ServerSide = ServerSide
+    };
 }
 
 public struct DonationUrl
