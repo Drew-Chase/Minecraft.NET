@@ -167,7 +167,7 @@ public static class ModpackUtils
                 {
                     foreach (CurseforgeProject project in result.Value.Projects)
                     {
-                        ModFile[] files = curseforgeClient.GetModFiles(project.Id.ToString()).Result ?? Array.Empty<ModFile>();
+                        ModFile[] files = curseforgeClient.GetProjectFiles(project.Id.ToString()).Result ?? Array.Empty<ModFile>();
                         foreach (ModFile item in files)
                         {
                             if (item.FileName.Equals(Path.GetFileName(file), StringComparison.OrdinalIgnoreCase))
