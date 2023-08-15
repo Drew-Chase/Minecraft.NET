@@ -10,7 +10,6 @@ using Chase.Minecraft.Data;
 using Chase.Minecraft.Model.Resources;
 using Chase.Minecraft.Modrinth;
 using Chase.Minecraft.Modrinth.Controller;
-using Chase.Minecraft.Modrinth.Data;
 using Chase.Minecraft.Modrinth.Model;
 using SearchNET.Algorithm;
 using System.Diagnostics;
