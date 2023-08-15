@@ -5,6 +5,7 @@
     https://www.gnu.org/licenses/gpl-3.0.en.html#license-text
 */
 
+using Chase.Minecraft.Model;
 using Newtonsoft.Json;
 
 namespace Chase.Minecraft.Modrinth.Model;
@@ -61,6 +62,24 @@ public struct ModrinthVersionFile
 
     [JsonProperty("files")]
     public VersionFileDetails[] Files { get; set; }
+
+    /// <summary>
+    /// Converts Modrinth Version File to Instance Mod Model
+    /// </summary>
+    /// <returns>Instance Mod Model</returns>
+    public ModModel ToInstanceMod()
+    {
+        VersionFileDetails primary = Files.FirstOrDefault(i => i.Primary);
+        return new ModModel()
+        {
+            ProjectID = ProjectId,
+            VersionID = Id,
+            Source = Minecraft.Data.PlatformSource.Modrinth,
+            Name = Name,
+            FileName = primary.Filename,
+            DownloadURL = primary.Url
+        };
+    }
 }
 
 public struct Dependency
