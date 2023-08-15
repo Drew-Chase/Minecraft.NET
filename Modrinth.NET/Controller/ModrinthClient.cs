@@ -204,22 +204,65 @@ public sealed class ModrinthClient : IDisposable
     }
 
     /// <summary>
+    /// Retrieves the latest version file for a specific project, optionally filtered by Minecraft
+    /// version and loader.
+    /// </summary>
+    /// <param name="projectId">The unique identifier of the project.</param>
+    /// <param name="minecraftVersion">
+    /// Optional. The version of Minecraft for which to retrieve the version file. If not specified,
+    /// all versions are considered.
+    /// </param>
+    /// <param name="loader">
+    /// Optional. The loader used for the mod. If not specified, all loaders are considered.
+    /// </param>
+    /// <returns>
+    /// The latest version file associated with the specified project, Minecraft version, and loader
+    /// (if provided), or null if no such version file is found.
+    /// </returns>
+    /// <remarks>
+    /// This method fetches project versions that match the provided Minecraft version (if provided)
+    /// and loader (if provided), and then returns the latest version file based on the date of publication.
+    /// </remarks>
+
+    public async Task<ModrinthVersionFile?> GetLatestVersionFile(string projectId, string? minecraftVersion = null, ModLoaders? loader = null)
+    {
+        ModrinthVersionFile[]? versions = await GetProjectVersionsAsync(projectId, minecraftVersion == null ? null : new string[] { minecraftVersion }, loader == null ? null : new ModLoaders[] { loader.Value });
+        if (versions != null && versions.Any())
+        {
+            return versions.OrderByDescending(i => i.DatePublished).FirstOrDefault();
+        }
+
+        return null;
+    }
+
+    /// <summary>
     /// Gets the versions of a Modrinth project based on the provided project ID.
     /// </summary>
     /// <param name="id">The ID of the project for which to retrieve the versions.</param>
+    /// <param name="gameVersions">an array of acceptable minecraft versions</param>
+    /// <param name="loaders">an array of acceptable mod loaders.</param>
     /// <returns>The project versions, or null if the operation fails.</returns>
     public ModrinthVersionFile[]? GetProjectVersions(string id, string[]? gameVersions = null, ModLoaders[]? loaders = null) => GetProjectVersionsAsync(id, gameVersions, loaders).Result;
 
     /// <summary>
-    /// Downloads a specific version file from Modrinth and saves it to the specified output directory.
+    /// Downloads a version file and adds it to the specified instance.
     /// </summary>
-    /// <param name="versionFile">The version file details.</param>
-    /// <param name="outputDirectory">The directory where the file will be saved.</param>
-    /// <param name="downloadProgress">The event to track the download progress.</param>
+    /// <param name="versionFile">The details of the version file to be downloaded.</param>
+    /// <param name="instance">The instance to which the downloaded file will be added.</param>
     /// <param name="subpath">
-    /// The folder inside of the instance directory that the file will be downloaded to.
+    /// The subpath within the instance directory where the file will be stored. Default is "mods".
     /// </param>
-    /// <returns>A Task containing the path to the downloaded file.</returns>
+    /// <param name="downloadProgress">
+    /// An event handler to track the progress of the download. Default is an empty event handler.
+    /// </param>
+    /// <returns>The full path to the downloaded version file.</returns>
+    /// <remarks>
+    /// This method downloads a version file specified by the provided <paramref
+    /// name="versionFile"/> details and adds it to the given <paramref name="instance"/>. The
+    /// <paramref name="subpath"/> parameter can be used to specify a subdirectory within the
+    /// instance's path to store the downloaded file. An optional <paramref
+    /// name="downloadProgress"/> event handler can be provided to track the progress of the download.
+    /// </remarks>
     public async Task<string> DownloadVersionFile(VersionFileDetails versionFile, InstanceModel instance, string subpath = "mods", DownloadProgressEvent? downloadProgress = null)
     {
         downloadProgress ??= (s, e) => { };
