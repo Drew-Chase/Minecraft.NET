@@ -131,4 +131,12 @@ public sealed class InstanceModel
     /// The source of the instance.
     /// </summary>
     public PlatformSource Source { get; set; } = PlatformSource.Unknown;
+
+    /// <summary>
+    /// Saves the current instance to file.
+    /// </summary>
+    public void Save()
+    {
+        InstanceManager.Save(Id, this);
+    }
 }
