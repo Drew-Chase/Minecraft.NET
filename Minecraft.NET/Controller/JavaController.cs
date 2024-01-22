@@ -6,11 +6,13 @@
 */
 
 using Chase.Minecraft.Exceptions;
+using Chase.Minecraft.Model;
 using Chase.Networking;
 using Chase.Networking.Event;
 using Newtonsoft.Json.Linq;
 using Serilog;
 using System.Runtime.InteropServices;
+using OperatingSystem = System.OperatingSystem;
 
 namespace Chase.Minecraft.Controller;
 
@@ -63,6 +65,23 @@ public static class JavaController
         }
 
         return installations;
+    }
+
+    /// <summary>
+    /// Gets the correct JVM version for the specified minecraft version.
+    /// </summary>
+    /// <param name="version">the minecraft version</param>
+    /// <param name="javaPath">the java path</param>
+    /// <returns></returns>
+    public static string GetValidJavaInstallationForMinecraftVersion(MinecraftVersion version, string javaPath)
+    {
+        Version cutoff = new(1, 13);
+        JVMInstallations local = GetLocalJVMInstallations(javaPath);
+        if (Version.TryParse(version.ID, out Version? result) && result < cutoff)
+        {
+            return local.Legacy;
+        }
+        return local.Latest;
     }
 
     /// <summary>
