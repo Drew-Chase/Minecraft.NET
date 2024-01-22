@@ -9,8 +9,9 @@ using Newtonsoft.Json;
 
 namespace Chase.Minecraft.Forge.Model;
 
-public struct ForgeVersionInfo
+public sealed class ForgeVersionInfo
 {
+
     [JsonProperty("id")]
     public string Id { get; set; }
 
@@ -30,7 +31,7 @@ public struct ForgeVersionInfo
     public string InheritsFrom { get; set; }
 
     [JsonProperty("arguments")]
-    public ForgeArguments Arguments { get; set; }
+    public ForgeArguments Arguments { get; set; } = new();
 
     [JsonProperty("libraries")]
     public ForgeLibrary[] Libraries { get; set; }
