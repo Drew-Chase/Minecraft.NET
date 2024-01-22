@@ -196,25 +196,39 @@ public class MinecraftClient : IDisposable
             foreach (DownloadArtifact artifact in _clientInfo.LibraryFiles)
             {
                 bool ok = true;
-                if (artifact.Rules != null && artifact.Rules.Any())
+                try
                 {
-                    foreach (Rule rule in artifact.Rules)
+                    if (artifact.Rules != null && artifact.Rules.Any())
                     {
-                        if (!OperatingSystem.IsOSPlatform(rule.OS.Name))
+                        foreach (Rule rule in artifact.Rules)
                         {
-                            ok = false;
-                            break;
+                            if (!OperatingSystem.IsOSPlatform(rule.OS.Name))
+                            {
+                                ok = false;
+                                break;
+                            }
                         }
                     }
                 }
+                catch (Exception e)
+                {
+                    Log.Warning("Unable to determine rule for artifact: {MSG}", e.Message, e);
+                }
                 if (ok)
                 {
-                    string absolutePath = Path.Combine(_clientInfo.LibrariesPath, artifact.Downloads.Artifact.Path);
-                    string filename = absolutePath.Split('/').Last();
-                    Log.Debug($"[Libraries] Downloading '{artifact.Downloads.Artifact.Path}'");
-                    paths.Add(absolutePath);
-                    string directory = Directory.CreateDirectory(Directory.GetParent(absolutePath)?.FullName ?? "").FullName;
-                    tasks.Add(_client.DownloadFileAsync(new Uri(artifact.Downloads.Artifact.Url), absolutePath, (s, e) => { }));
+                    try
+                    {
+                        string absolutePath = Path.GetFullPath(Path.Combine(_clientInfo.LibrariesPath, artifact.Downloads.Artifact.Path));
+                        string filename = Path.GetFileName(absolutePath);
+                        Log.Debug($"[Libraries] Downloading '{artifact.Downloads.Artifact.Path}'");
+                        paths.Add(absolutePath);
+                        string directory = Directory.CreateDirectory(Directory.GetParent(absolutePath)?.FullName ?? "").FullName;
+                        tasks.Add(_client.DownloadFileAsync(new Uri(artifact.Downloads.Artifact.Url), absolutePath, (s, e) => { }));
+                    }
+                    catch (Exception e)
+                    {
+                        Log.Error("Unable to download library file: {MSG}", e.Message, e);
+                    }
                 }
             }
             Task.WaitAll(tasks.ToArray());
