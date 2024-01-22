@@ -227,13 +227,16 @@ public static class ForgeLoader
                     using StreamReader reader = new(stream);
                     string jsonContent = reader.ReadToEnd();
                     info = JsonConvert.DeserializeObject<ForgeVersionInfo>(jsonContent);
+                    break;
                 }
             }
         }
         if (!string.IsNullOrWhiteSpace(info.Id))
         {
+            //info.Arguments.Game ??= Array.Empty<string>();
+            //info.Arguments.Jvm ??= Array.Empty<string>();
             instance.MinecraftArguments = info.Arguments.Game;
-            string librariesPath = Path.Combine(rootDirectory, "libraries");
+            string librariesPath = Path.GetFullPath(Path.Combine(rootDirectory, "libraries"));
             instance.JVMArguments = info.Arguments.Jvm.Select(i => i.Replace("${library_directory}", librariesPath).Replace("${classpath_separator}", ";").Replace("${version_name}", info.Id)).ToArray();
             instance.ModLoader = new()
             {
@@ -267,20 +270,30 @@ public static class ForgeLoader
             }
 
             List<Task> tasks = new();
-            List<string> paths = new();
+            instance.AdditionalClassPaths ??= Array.Empty<string>();
+            List<string> paths = instance.AdditionalClassPaths.ToList();
             foreach (ForgeLibrary libraryItem in info.Libraries)
             {
                 ForgeArtifact artifact = libraryItem.Downloads.Artifact;
                 Uri artifactUri = artifact.Url;
-                string artifactPath = Path.Combine(librariesPath, artifact.Path);
+                string artifactPath = Path.GetFullPath(Path.Combine(librariesPath, artifact.Path));
                 Directory.CreateDirectory(Directory.GetParent(artifactPath)?.FullName ?? "");
                 paths.Add(artifactPath);
             }
             Task.WaitAll(tasks.ToArray());
             instance.LaunchClassPath = info.MainClass;
-            instance.AdditionalClassPaths = paths.ToArray();
+            instance.AdditionalClassPaths = paths.Distinct().ToArray();
             instance.ClientJar = Path.Combine(rootDirectory, "versions", info.Id, $"{info.Id}.jar");
             instance.GameVersion = info.Id;
+
+            if (Version.TryParse(instance.MinecraftVersion.ID, out Version? version) && version < new Version(1, 13))
+            {
+                List<string> args = instance.MinecraftArguments.ToList();
+                args.Add(@"--tweakClass net.minecraftforge.fml.common.launcher.FMLTweaker");
+                args.Add(@"--versionType Forge");
+                instance.MinecraftArguments = args.Distinct().ToArray();
+            }
+
             instance = instance.InstanceManager.Save(instance.Id, instance);
 
             Process process = new()
