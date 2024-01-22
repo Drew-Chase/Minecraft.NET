@@ -9,11 +9,15 @@ using Newtonsoft.Json;
 
 namespace Chase.Minecraft.Forge.Model;
 
-public struct ForgeArguments
+public sealed class ForgeArguments
 {
+    public ForgeArguments()
+    {
+    }
+
     [JsonProperty("game")]
-    public string[] Game { get; set; }
+    public string[] Game { get; set; } = Array.Empty<string>();
 
     [JsonProperty("jvm")]
-    public string[] Jvm { get; set; }
+    public string[] Jvm { get; set; } = Array.Empty<string>();
 }
